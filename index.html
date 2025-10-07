@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Health Chatbot</title>
+<style>
+body { font-family: Arial; background: #f5f5f5; display:flex; justify-content:center; align-items:center; height:100vh; }
+.chatbox { background:#fff; padding:20px; width:400px; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.2); display:flex; flex-direction:column; }
+h2 { text-align:center; }
+.messages { border:1px solid #ddd; border-radius:5px; padding:10px; height:300px; overflow-y:auto; background:#f9f9f9; margin-bottom:10px; }
+.user-msg { text-align:right; color:#007bff; margin-bottom:10px; }
+.bot-msg { text-align:left; color:#28a745; margin-bottom:10px; }
+form { display:flex; justify-content:space-between; }
+input[type=text] { width:80%; padding:10px; border-radius:5px; border:1px solid #ddd; }
+button { width:18%; padding:10px; border:none; border-radius:5px; background:#007bff; color:white; cursor:pointer; }
+button:hover { background:#0056b3; }
+</style>
+</head>
+<body>
+<div class="chatbox">
+<h2>Health Chatbot</h2>
+<div class="messages" id="messages"></div>
+<form id="chat-form">
+<input type="text" id="user_input" placeholder="Enter your symptoms..." required>
+<button type="submit">Send</button>
+</form>
+</div>
+
+<script>
+const form = document.getElementById('chat-form');
+const messages = document.getElementById('messages');
+
+// Change this to your deployed backend URL
+const backend_url = "how https://your-backend.onrender.com/get_response";
+
+form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const user_input = document.getElementById('user_input').value;
+    if(!user_input) return;
+
+    // Display user message
+    const userMsgDiv = document.createElement('div');
+    userMsgDiv.className = 'user-msg';
+    userMsgDiv.textContent = user_input;
+    messages.appendChild(userMsgDiv);
+    document.getElementById('user_input').value = '';
+
+    try {
+        const response = await fetch(backend_url, {
+            method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:`user_input=${encodeURIComponent(user_input)}`
+        });
+        const data = await response.json();
+        const botMsgDiv = document.createElement('div');
+        botMsgDiv.className='bot-msg';
+        botMsgDiv.textContent = data.response;
+        messages.appendChild(botMsgDiv);
+        messages.scrollTop = messages.scrollHeight;
+    } catch(err) {
+        const botMsgDiv = document.createElement('div');
+        botMsgDiv.className='bot-msg';
+        botMsgDiv.textContent='Error connecting to server.';
+        messages.appendChild(botMsgDiv);
+    }
+});
+</script>
+</body>
+</html>
