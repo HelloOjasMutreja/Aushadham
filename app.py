@@ -1,358 +1,707 @@
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 import secrets
-import re
+import uuid
 from datetime import datetime
+from typing import Dict, List, Optional
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
 CORS(app, supports_credentials=True)
 
-# Enhanced medical knowledge base
-medical_knowledge = {
-    'headache': {
-        'follow_up_questions': [
-            "How severe is your headache on a scale of 1-10?",
-            "Where exactly is the pain located? (forehead, temples, back of head, entire head)",
-            "How long have you been experiencing this headache?",
-            "Is it throbbing, constant, or sharp pain?",
-            "Do you have any sensitivity to light or sound?"
-        ],
-        'conditions': {
-            'migraine': {
-                'indicators': ['severe', 'throbbing', 'one side', 'light sensitivity', 'nausea'],
-                'medicine': 'Sumatriptan (Imitrex) or Ibuprofen',
-                'dosage': {
-                    'adults': 'Sumatriptan: 50-100mg at onset; Ibuprofen: 400-600mg',
-                    'children': 'Consult pediatrician for migraine medication'
-                },
-                'advice': 'Rest in a dark, quiet room. Apply cold compress. Stay hydrated.'
+# Comprehensive medical questionnaire knowledge base
+questionnaire_templates = {
+    'stomach': {
+        'initial_questions': [
+            {
+                'id': 'hydration',
+                'question': 'Did you drink enough water today (at least 6-8 glasses)?',
+                'type': 'yes_no',
+                'weight': 'high'
             },
-            'tension': {
-                'indicators': ['mild', 'moderate', 'both sides', 'constant', 'stress'],
-                'medicine': 'Acetaminophen (Tylenol) or Aspirin',
-                'dosage': {
-                    'adults': 'Acetaminophen: 500-1000mg every 4-6 hours; Aspirin: 325-650mg every 4 hours',
-                    'children': 'Acetaminophen: 10-15mg/kg every 4-6 hours'
-                },
-                'advice': 'Practice relaxation techniques. Maintain good posture. Get adequate sleep.'
+            {
+                'id': 'recent_meal',
+                'question': 'Did you eat anything unusual or outside food in the last 24 hours?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'pain_location',
+                'question': 'Is the pain in your upper abdomen or lower abdomen?',
+                'type': 'choice',
+                'options': ['Upper abdomen', 'Lower abdomen', 'All over', 'Around belly button'],
+                'weight': 'high'
+            },
+            {
+                'id': 'pain_type',
+                'question': 'How would you describe the pain?',
+                'type': 'choice',
+                'options': ['Sharp/Stabbing', 'Dull/Aching', 'Cramping', 'Burning'],
+                'weight': 'medium'
+            },
+            {
+                'id': 'nausea',
+                'question': 'Are you experiencing nausea or have you vomited?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'bowel_movement',
+                'question': 'Have you had normal bowel movements today?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'fever',
+                'question': 'Do you have a fever or feel feverish?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'exercise',
+                'question': 'Were you involved in any strenuous exercise in the last couple of days?',
+                'type': 'yes_no',
+                'weight': 'low'
+            },
+            {
+                'id': 'stress',
+                'question': 'Have you been under unusual stress lately?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'medication',
+                'question': 'Have you taken any medication for this pain?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'duration',
+                'question': 'How long have you been experiencing this pain?',
+                'type': 'choice',
+                'options': ['Less than 1 hour', '1-3 hours', '3-6 hours', 'More than 6 hours'],
+                'weight': 'high'
+            },
+            {
+                'id': 'severity',
+                'question': 'On a scale of 1-10, how severe is your pain?',
+                'type': 'scale',
+                'options': ['1-3 (Mild)', '4-6 (Moderate)', '7-9 (Severe)', '10 (Unbearable)'],
+                'weight': 'high'
+            }
+        ],
+        'conditional_questions': {
+            'nausea': {
+                'yes': [
+                    {
+                        'id': 'vomit_frequency',
+                        'question': 'How many times have you vomited?',
+                        'type': 'choice',
+                        'options': ['Once', '2-3 times', 'More than 3 times', 'Just nauseous, no vomiting'],
+                        'weight': 'high'
+                    }
+                ]
+            },
+            'recent_meal': {
+                'yes': [
+                    {
+                        'id': 'food_type',
+                        'question': 'What type of food did you eat?',
+                        'type': 'choice',
+                        'options': ['Street food', 'Restaurant food', 'Home-cooked but unusual', 'Dairy products'],
+                        'weight': 'medium'
+                    }
+                ]
+            }
+        }
+    },
+    'headache': {
+        'initial_questions': [
+            {
+                'id': 'location',
+                'question': 'Where exactly is your headache located?',
+                'type': 'choice',
+                'options': ['Forehead', 'Temples', 'Back of head', 'One side only', 'Entire head'],
+                'weight': 'high'
+            },
+            {
+                'id': 'pain_type',
+                'question': 'How would you describe the pain?',
+                'type': 'choice',
+                'options': ['Throbbing/Pulsating', 'Constant pressure', 'Sharp/Stabbing', 'Dull ache'],
+                'weight': 'high'
+            },
+            {
+                'id': 'triggers',
+                'question': 'Did anything specific trigger this headache?',
+                'type': 'choice',
+                'options': ['Stress', 'Lack of sleep', 'Bright lights', 'Loud noise', 'Not sure'],
+                'weight': 'medium'
+            },
+            {
+                'id': 'light_sensitivity',
+                'question': 'Are you sensitive to light right now?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'sound_sensitivity',
+                'question': 'Are you sensitive to sound right now?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'nausea',
+                'question': 'Do you feel nauseous?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'vision',
+                'question': 'Are you experiencing any vision changes (blurriness, spots, auras)?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'frequency',
+                'question': 'How often do you get headaches?',
+                'type': 'choice',
+                'options': ['Rarely', 'Once a month', 'Weekly', 'Daily'],
+                'weight': 'medium'
+            },
+            {
+                'id': 'hydration',
+                'question': 'Have you been drinking enough water today?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'sleep',
+                'question': 'How many hours did you sleep last night?',
+                'type': 'choice',
+                'options': ['Less than 4', '4-6 hours', '6-8 hours', 'More than 8'],
+                'weight': 'medium'
+            },
+            {
+                'id': 'screen_time',
+                'question': 'Have you been looking at screens for extended periods today?',
+                'type': 'yes_no',
+                'weight': 'low'
+            },
+            {
+                'id': 'medication',
+                'question': 'Have you taken any pain medication?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            }
+        ],
+        'conditional_questions': {
+            'medication': {
+                'yes': [
+                    {
+                        'id': 'med_effect',
+                        'question': 'Did the medication help?',
+                        'type': 'choice',
+                        'options': ['Yes, completely', 'Partially', 'Not at all', 'Made it worse'],
+                        'weight': 'high'
+                    }
+                ]
             }
         }
     },
     'fever': {
-        'follow_up_questions': [
-            "What is your current temperature?",
-            "How long have you had this fever?",
-            "Do you have any other symptoms like cough, body aches, or sore throat?",
-            "Have you taken any medication already?",
-            "Do you have any chronic health conditions?"
+        'initial_questions': [
+            {
+                'id': 'temperature',
+                'question': 'What is your current temperature?',
+                'type': 'choice',
+                'options': ['98-99°F', '100-101°F', '102-103°F', 'Above 103°F', "Don't know"],
+                'weight': 'high'
+            },
+            {
+                'id': 'duration',
+                'question': 'How long have you had this fever?',
+                'type': 'choice',
+                'options': ['Just started', 'Few hours', '1 day', '2-3 days', 'More than 3 days'],
+                'weight': 'high'
+            },
+            {
+                'id': 'chills',
+                'question': 'Are you experiencing chills or shivering?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'sweating',
+                'question': 'Are you sweating excessively?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'body_ache',
+                'question': 'Do you have body aches or muscle pain?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'throat',
+                'question': 'Do you have a sore throat?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'cough',
+                'question': 'Do you have a cough?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'appetite',
+                'question': 'Have you lost your appetite?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'fatigue',
+                'question': 'Are you feeling unusually tired or weak?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'exposure',
+                'question': 'Have you been exposed to anyone who was sick recently?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            }
         ],
-        'conditions': {
-            'viral_fever': {
-                'indicators': ['mild', '100-102F', 'body aches', 'fatigue'],
-                'medicine': 'Acetaminophen (Tylenol) or Ibuprofen (Advil)',
-                'dosage': {
-                    'adults': 'Acetaminophen: 650-1000mg every 4-6 hours; Ibuprofen: 400-600mg every 6 hours',
-                    'children': 'Weight-based dosing - consult package or pediatrician'
-                },
-                'advice': 'Rest, stay hydrated, use cool compresses. See doctor if fever exceeds 103°F or lasts >3 days.'
+        'conditional_questions': {
+            'cough': {
+                'yes': [
+                    {
+                        'id': 'cough_type',
+                        'question': 'Is your cough dry or producing phlegm?',
+                        'type': 'choice',
+                        'options': ['Dry cough', 'With phlegm', 'Both'],
+                        'weight': 'high'
+                    }
+                ]
             }
         }
     },
     'cough': {
-        'follow_up_questions': [
-            "Is your cough dry or producing phlegm?",
-            "How long have you been coughing?",
-            "Is it worse at night or during the day?",
-            "Do you have any chest pain or shortness of breath?",
-            "Are you a smoker or have allergies?"
-        ],
-        'conditions': {
-            'dry_cough': {
-                'indicators': ['dry', 'no phlegm', 'tickling', 'night'],
-                'medicine': 'Dextromethorphan (Robitussin DM) or Honey',
-                'dosage': {
-                    'adults': 'Dextromethorphan: 10-20mg every 4 hours; Honey: 1-2 tablespoons',
-                    'children': 'Age 4+: 5-10mg every 4 hours; Honey for age 1+'
-                },
-                'advice': 'Use humidifier, avoid irritants, stay hydrated, elevate head while sleeping.'
+        'initial_questions': [
+            {
+                'id': 'cough_type',
+                'question': 'Is your cough dry or producing phlegm/mucus?',
+                'type': 'choice',
+                'options': ['Dry cough', 'With clear phlegm', 'With colored phlegm', 'With blood'],
+                'weight': 'high'
             },
-            'productive_cough': {
-                'indicators': ['phlegm', 'mucus', 'chest congestion'],
-                'medicine': 'Guaifenesin (Mucinex)',
-                'dosage': {
-                    'adults': '200-400mg every 4 hours',
-                    'children': 'Age 4+: 50-100mg every 4 hours'
-                },
-                'advice': 'Drink plenty of fluids, use steam inhalation, avoid suppressing productive coughs.'
+            {
+                'id': 'duration',
+                'question': 'How long have you been coughing?',
+                'type': 'choice',
+                'options': ['Just started', '2-3 days', '1 week', '2 weeks', 'More than 2 weeks'],
+                'weight': 'high'
+            },
+            {
+                'id': 'frequency',
+                'question': 'How often are you coughing?',
+                'type': 'choice',
+                'options': ['Occasionally', 'Frequently', 'Constant', 'Only at night', 'Only in morning'],
+                'weight': 'medium'
+            },
+            {
+                'id': 'chest_pain',
+                'question': 'Do you have chest pain when coughing?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'breathing',
+                'question': 'Are you experiencing shortness of breath?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'wheezing',
+                'question': 'Do you hear wheezing when breathing?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'fever',
+                'question': 'Do you have a fever?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'smoking',
+                'question': 'Do you smoke or have you been exposed to smoke?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'allergies',
+                'question': 'Do you have known allergies?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'environment',
+                'question': 'Have you been exposed to dust, chemicals, or irritants?',
+                'type': 'yes_no',
+                'weight': 'medium'
             }
-        }
-    },
-    'stomach': {
-        'follow_up_questions': [
-            "What kind of stomach issue are you experiencing? (pain, nausea, diarrhea, constipation)",
-            "Where exactly is the discomfort?",
-            "When did this start?",
-            "Have you eaten anything unusual recently?",
-            "On a scale of 1-10, how severe is the discomfort?"
         ],
-        'conditions': {
-            'indigestion': {
-                'indicators': ['bloating', 'fullness', 'upper abdomen', 'after eating'],
-                'medicine': 'Tums or Pepto-Bismol',
-                'dosage': {
-                    'adults': 'Tums: 2-4 tablets as needed; Pepto: 30ml every 30 min as needed',
-                    'children': 'Consult pediatrician for appropriate antacid'
-                },
-                'advice': 'Eat smaller meals, avoid spicy/fatty foods, dont lie down after eating.'
-            }
-        }
+        'conditional_questions': {}
     }
 }
 
-# Conversation state management
-conversations = {}
-
-class HealthChatbot:
-    def __init__(self, session_id):
+class QuestionnaireSession:
+    def __init__(self, session_id: str, symptom: str, initial_description: str):
         self.session_id = session_id
-        self.state = 'greeting'
-        self.current_symptom = None
-        self.question_index = 0
-        self.collected_info = {}
-        self.identified_condition = None
-        
-    def process_message(self, user_input):
-        user_input = user_input.lower().strip()
-        
-        if self.state == 'greeting':
-            return self.handle_greeting(user_input)
-        elif self.state == 'symptom_collection':
-            return self.handle_symptom_collection(user_input)
-        elif self.state == 'asking_questions':
-            return self.handle_question_response(user_input)
-        elif self.state == 'diagnosis':
-            return self.handle_diagnosis_feedback(user_input)
-        else:
-            return self.handle_greeting(user_input)
+        self.symptom = symptom
+        self.initial_description = initial_description
+        self.questions = []
+        self.current_index = 0
+        self.answers = {}
+        self.completed = False
+        self.start_time = datetime.now()
+        self._build_questions()
     
-    def handle_greeting(self, user_input):
-        greetings = ['hi', 'hello', 'hey', 'help', 'start']
-        if any(greet in user_input for greet in greetings):
-            self.state = 'symptom_collection'
-            return {
-                'response': (
-                    "Hello! I'm your AI health assistant. 🏥\n\n"
-                    "I can help you with common symptoms like:\n"
-                    "• Headache\n"
-                    "• Fever\n"
-                    "• Cough\n"
-                    "• Stomach issues\n\n"
-                    "Please describe your main symptom, and I'll ask you some questions to better understand your condition."
-                ),
-                'quick_replies': ['Headache', 'Fever', 'Cough', 'Stomach pain']
-            }
-        else:
-            # Try to identify symptom directly
-            return self.handle_symptom_collection(user_input)
+    def _build_questions(self):
+        """Build the complete question list based on symptom"""
+        template = self._get_template()
+        if template:
+            self.questions = template.get('initial_questions', [])
     
-    def handle_symptom_collection(self, user_input):
-        # Check for main symptoms
-        for symptom, data in medical_knowledge.items():
-            if symptom in user_input or (symptom == 'stomach' and any(s in user_input for s in ['stomach', 'belly', 'abdomen', 'digestive'])):
-                self.current_symptom = symptom
-                self.state = 'asking_questions'
-                self.question_index = 0
-                self.collected_info = {'main_symptom': symptom, 'initial_description': user_input}
-                
-                return {
-                    'response': f"I understand you're experiencing {symptom} issues. Let me ask you a few questions to better help you.\n\n{data['follow_up_questions'][0]}",
-                    'quick_replies': self.get_quick_replies_for_question(symptom, 0)
-                }
-        
-        # Symptom not recognized
-        self.state = 'symptom_collection'
-        return {
-            'response': (
-                "I can help you with the following symptoms:\n"
-                "• Headache\n"
-                "• Fever\n"
-                "• Cough\n"
-                "• Stomach issues\n\n"
-                "Please select or describe one of these symptoms."
-            ),
-            'quick_replies': ['Headache', 'Fever', 'Cough', 'Stomach issues']
-        }
-    
-    def handle_question_response(self, user_input):
-        # Store the response
-        question_key = f"question_{self.question_index}"
-        self.collected_info[question_key] = user_input
-        
-        # Move to next question
-        self.question_index += 1
-        questions = medical_knowledge[self.current_symptom]['follow_up_questions']
-        
-        if self.question_index < len(questions):
-            # Ask next question
-            return {
-                'response': questions[self.question_index],
-                'quick_replies': self.get_quick_replies_for_question(self.current_symptom, self.question_index)
-            }
-        else:
-            # All questions asked, provide diagnosis
-            return self.provide_diagnosis()
-    
-    def get_quick_replies_for_question(self, symptom, question_index):
-        # Provide context-appropriate quick replies
-        quick_reply_options = {
-            'headache': {
-                0: ['Mild (1-3)', 'Moderate (4-6)', 'Severe (7-10)'],
-                1: ['Forehead', 'Temples', 'Back of head', 'Entire head'],
-                2: ['Just started', 'Few hours', '1-2 days', 'More than 3 days'],
-                3: ['Throbbing', 'Constant', 'Sharp', 'Dull'],
-                4: ['Yes, very sensitive', 'Somewhat sensitive', 'No sensitivity']
-            },
-            'fever': {
-                0: ['98-99°F', '100-101°F', '102-103°F', 'Above 103°F'],
-                1: ['Just today', '1-2 days', '3-4 days', 'More than 5 days'],
-                2: ['Yes, cough', 'Body aches', 'Sore throat', 'No other symptoms'],
-                3: ['Yes', 'No'],
-                4: ['Yes', 'No']
-            },
-            'cough': {
-                0: ['Dry cough', 'With phlegm', 'Both'],
-                1: ['Just started', '2-3 days', 'A week', 'More than a week'],
-                2: ['Worse at night', 'Worse during day', 'Same throughout'],
-                3: ['Yes, chest pain', 'Shortness of breath', 'Both', 'Neither'],
-                4: ['Smoker', 'Have allergies', 'Both', 'Neither']
-            },
-            'stomach': {
-                0: ['Pain', 'Nausea', 'Diarrhea', 'Constipation', 'Bloating'],
-                1: ['Upper abdomen', 'Lower abdomen', 'All over', 'Around belly button'],
-                2: ['Just now', 'Few hours ago', 'Yesterday', 'Few days ago'],
-                3: ['Yes', 'No', 'Not sure'],
-                4: ['Mild (1-3)', 'Moderate (4-6)', 'Severe (7-10)']
-            }
+    def _get_template(self):
+        """Get the appropriate questionnaire template"""
+        symptom_keywords = {
+            'stomach': ['stomach', 'belly', 'abdomen', 'tummy', 'digestive', 'gastric'],
+            'headache': ['head', 'headache', 'migraine', 'temple'],
+            'fever': ['fever', 'temperature', 'hot', 'feverish'],
+            'cough': ['cough', 'coughing', 'throat', 'respiratory']
         }
         
-        return quick_reply_options.get(symptom, {}).get(question_index, [])
+        for key, keywords in symptom_keywords.items():
+            if any(word in self.symptom.lower() for word in keywords):
+                return questionnaire_templates.get(key)
+        
+        # Default to stomach if no match
+        return questionnaire_templates.get('stomach')
     
-    def provide_diagnosis(self):
-        self.state = 'diagnosis'
-        
-        # Analyze collected information
-        symptom_data = medical_knowledge[self.current_symptom]
-        
-        # Simple diagnosis logic (can be enhanced with more sophisticated analysis)
-        # For demo, we'll select the first matching condition
-        diagnosis = None
-        for condition_name, condition_data in symptom_data['conditions'].items():
-            # Check if any indicators match the collected responses
-            matches = 0
-            for response in self.collected_info.values():
-                if isinstance(response, str):
-                    for indicator in condition_data['indicators']:
-                        if indicator in response.lower():
-                            matches += 1
+    def get_current_question(self):
+        """Get the current question"""
+        if self.current_index < len(self.questions):
+            question = self.questions[self.current_index]
+            return {
+                'question': question['question'],
+                'type': question['type'],
+                'options': question.get('options', ['Yes', 'No']),
+                'current': self.current_index + 1,
+                'total': len(self.questions),
+                'progress': ((self.current_index + 1) / len(self.questions)) * 100
+            }
+        return None
+    
+    def submit_answer(self, answer: str):
+        """Submit answer for current question"""
+        if self.current_index < len(self.questions):
+            question_id = self.questions[self.current_index]['id']
+            self.answers[question_id] = answer
             
-            if matches > 0:
-                diagnosis = condition_data
-                self.identified_condition = condition_name
-                break
+            # Check for conditional questions
+            self._add_conditional_questions(question_id, answer)
+            
+            return True
+        return False
+    
+    def _add_conditional_questions(self, question_id: str, answer: str):
+        """Add conditional questions based on answer"""
+        template = self._get_template()
+        if template and 'conditional_questions' in template:
+            conditionals = template['conditional_questions'].get(question_id, {})
+            if answer.lower() in conditionals:
+                new_questions = conditionals[answer.lower()]
+                # Insert new questions after current one
+                for i, q in enumerate(new_questions):
+                    self.questions.insert(self.current_index + 1 + i, q)
+    
+    def next_question(self):
+        """Move to next question"""
+        if self.current_index < len(self.questions) - 1:
+            self.current_index += 1
+            return True
+        else:
+            self.completed = True
+            return False
+    
+    def previous_question(self):
+        """Move to previous question"""
+        if self.current_index > 0:
+            self.current_index -= 1
+            return True
+        return False
+    
+    def skip_question(self):
+        """Skip current question"""
+        if self.current_index < len(self.questions):
+            question_id = self.questions[self.current_index]['id']
+            self.answers[question_id] = 'Skipped'
+            return self.next_question()
+        return False
+    
+    def generate_report(self):
+        """Generate comprehensive report"""
+        template = self._get_template()
         
-        if not diagnosis:
-            # Default to first condition if no specific match
-            first_condition = list(symptom_data['conditions'].keys())[0]
-            diagnosis = symptom_data['conditions'][first_condition]
-            self.identified_condition = first_condition
+        # Analyze answers for risk assessment
+        risk_score = 0
+        recommendations = []
+        medications = []
         
-        response_text = (
-            "📋 **Based on your responses, here's my assessment:**\n\n"
-            f"**Likely Condition:** {self.identified_condition.replace('_', ' ').title()}\n\n"
-            f"💊 **Recommended Medication:**\n{diagnosis['medicine']}\n\n"
-            f"📊 **Dosage Guidelines:**\n"
-            f"• Adults: {diagnosis['dosage']['adults']}\n"
-            f"• Children: {diagnosis['dosage']['children']}\n\n"
-            f"💡 **Additional Advice:**\n{diagnosis['advice']}\n\n"
-            "⚠️ **Important:** This is general guidance only. If symptoms persist or worsen, "
-            "please consult a healthcare professional immediately.\n\n"
-            "Would you like to check another symptom or need more information?"
-        )
+        for question in self.questions:
+            answer = self.answers.get(question['id'], 'Not answered')
+            weight = question.get('weight', 'low')
+            
+            # Calculate risk based on certain answers
+            if answer.lower() in ['yes', 'severe', 'more than 3 days', 'above 103°f', '7-9 (severe)', '10 (unbearable)']:
+                if weight == 'high':
+                    risk_score += 3
+                elif weight == 'medium':
+                    risk_score += 2
+                else:
+                    risk_score += 1
+        
+        # Determine severity
+        if risk_score >= 15:
+            severity = 'High'
+            urgency = 'Seek immediate medical attention'
+        elif risk_score >= 8:
+            severity = 'Moderate'
+            urgency = 'Consult a doctor within 24 hours'
+        else:
+            severity = 'Low'
+            urgency = 'Monitor symptoms, see doctor if worsens'
+        
+        # Generate recommendations based on symptom type
+        if 'stomach' in self.symptom.lower():
+            recommendations = [
+                'Stay hydrated with small sips of water',
+                'Eat bland foods (BRAT diet: Bananas, Rice, Applesauce, Toast)',
+                'Avoid dairy, caffeine, and fatty foods',
+                'Rest and avoid strenuous activities'
+            ]
+            medications = [
+                {'name': 'Antacids (Tums, Mylanta)', 'purpose': 'For acid reflux or indigestion'},
+                {'name': 'Bismuth subsalicylate (Pepto-Bismol)', 'purpose': 'For general stomach upset'},
+                {'name': 'Simethicone (Gas-X)', 'purpose': 'For gas and bloating'}
+            ]
+        elif 'head' in self.symptom.lower():
+            recommendations = [
+                'Rest in a quiet, dark room',
+                'Apply cold compress to forehead',
+                'Stay hydrated',
+                'Practice relaxation techniques',
+                'Maintain regular sleep schedule'
+            ]
+            medications = [
+                {'name': 'Acetaminophen (Tylenol)', 'purpose': 'For mild to moderate pain'},
+                {'name': 'Ibuprofen (Advil, Motrin)', 'purpose': 'For inflammation and pain'},
+                {'name': 'Aspirin', 'purpose': 'For tension headaches'}
+            ]
+        elif 'fever' in self.symptom.lower():
+            recommendations = [
+                'Rest and get plenty of sleep',
+                'Stay hydrated with water and electrolyte drinks',
+                'Use cool compresses',
+                'Wear light clothing',
+                'Monitor temperature regularly'
+            ]
+            medications = [
+                {'name': 'Acetaminophen (Tylenol)', 'purpose': 'To reduce fever'},
+                {'name': 'Ibuprofen (Advil, Motrin)', 'purpose': 'To reduce fever and body aches'}
+            ]
+        elif 'cough' in self.symptom.lower():
+            recommendations = [
+                'Stay hydrated to thin mucus',
+                'Use a humidifier',
+                'Gargle with warm salt water',
+                'Avoid irritants like smoke',
+                'Elevate head while sleeping'
+            ]
+            medications = [
+                {'name': 'Dextromethorphan (Robitussin)', 'purpose': 'For dry cough'},
+                {'name': 'Guaifenesin (Mucinex)', 'purpose': 'For productive cough'},
+                {'name': 'Throat lozenges', 'purpose': 'For throat irritation'}
+            ]
         
         return {
-            'response': response_text,
-            'quick_replies': ['Check another symptom', 'More info', 'Thank you']
+            'session_id': self.session_id,
+            'symptom': self.symptom,
+            'initial_description': self.initial_description,
+            'assessment_date': datetime.now().strftime('%Y-%m-%d %H:%M'),
+            'questions_answered': len([a for a in self.answers.values() if a != 'Skipped']),
+            'total_questions': len(self.questions),
+            'severity': severity,
+            'urgency': urgency,
+            'risk_score': risk_score,
+            'recommendations': recommendations,
+            'suggested_medications': medications,
+            'answers': self.answers,
+            'detailed_answers': [
+                {
+                    'question': q['question'],
+                    'answer': self.answers.get(q['id'], 'Not answered'),
+                    'importance': q.get('weight', 'low')
+                } for q in self.questions
+            ],
+            'disclaimer': 'This assessment is for informational purposes only and does not replace professional medical advice. Please consult a healthcare provider for proper diagnosis and treatment.'
         }
-    
-    def handle_diagnosis_feedback(self, user_input):
-        if 'another' in user_input or 'new' in user_input or 'different' in user_input:
-            self.state = 'symptom_collection'
-            self.current_symptom = None
-            self.question_index = 0
-            self.collected_info = {}
-            return {
-                'response': "Sure! Please describe your symptom, and I'll help you with that.",
-                'quick_replies': ['Headache', 'Fever', 'Cough', 'Stomach pain']
-            }
-        elif 'more' in user_input or 'info' in user_input:
-            return {
-                'response': (
-                    "Here's additional information:\n\n"
-                    "**When to see a doctor immediately:**\n"
-                    "• Severe symptoms that don't improve with medication\n"
-                    "• Difficulty breathing or chest pain\n"
-                    "• High fever (>103°F) lasting more than 3 days\n"
-                    "• Signs of dehydration\n"
-                    "• Persistent vomiting or severe abdominal pain\n\n"
-                    "**General wellness tips:**\n"
-                    "• Stay hydrated (8+ glasses of water daily)\n"
-                    "• Get 7-9 hours of sleep\n"
-                    "• Maintain a balanced diet\n"
-                    "• Exercise regularly\n"
-                    "• Manage stress through relaxation techniques\n\n"
-                    "Is there anything else I can help you with?"
-                ),
-                'quick_replies': ['Check another symptom', 'Thank you']
-            }
-        else:
-            self.state = 'greeting'
-            return {
-                'response': "You're welcome! Take care of yourself, and don't hesitate to seek professional medical help if needed. Feel better soon! 🌟",
-                'quick_replies': ['Start over']
-            }
+
+# Session storage
+sessions: Dict[str, QuestionnaireSession] = {}
 
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({
-        "status": "Advanced Health Chatbot API is running!",
-        "version": "2.0",
-        "endpoints": ["/get_response", "/reset_session"]
+        "status": "Medical Questionnaire API is running!",
+        "version": "3.0",
+        "endpoints": [
+            "/start_questionnaire",
+            "/submit_answer", 
+            "/next_question",
+            "/previous_question",
+            "/skip_question",
+            "/get_current_question",
+            "/get_report"
+        ]
     })
 
-@app.route("/get_response", methods=["POST", "OPTIONS"])
-def get_response():
-    if request.method == "OPTIONS":
-        return jsonify({}), 200
-    
-    user_input = request.json.get('user_input', '')
-    session_id = request.json.get('session_id', 'default')
-    
-    # Get or create chatbot instance for this session
-    if session_id not in conversations:
-        conversations[session_id] = HealthChatbot(session_id)
-    
-    chatbot = conversations[session_id]
-    response_data = chatbot.process_message(user_input)
-    
-    return jsonify(response_data)
+@app.route("/start_questionnaire", methods=["POST"])
+def start_questionnaire():
+    try:
+        data = request.json
+        symptom = data.get('symptom', '')
+        initial_description = data.get('description', symptom)
+        
+        # Generate unique session ID
+        session_id = str(uuid.uuid4())
+        
+        # Create new questionnaire session
+        session = QuestionnaireSession(session_id, symptom, initial_description)
+        sessions[session_id] = session
+        
+        # Get first question
+        first_question = session.get_current_question()
+        
+        return jsonify({
+            'success': True,
+            'session_id': session_id,
+            'message': f'Starting questionnaire for: {symptom}',
+            'question': first_question
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
 
-@app.route("/reset_session", methods=["POST"])
-def reset_session():
-    session_id = request.json.get('session_id', 'default')
-    if session_id in conversations:
-        del conversations[session_id]
-    return jsonify({"status": "Session reset successfully"})
+@app.route("/submit_answer", methods=["POST"])
+def submit_answer():
+    try:
+        data = request.json
+        session_id = data.get('session_id')
+        answer = data.get('answer')
+        action = data.get('action', 'next')  # next, previous, or skip
+        
+        if session_id not in sessions:
+            return jsonify({'success': False, 'error': 'Invalid session'}), 404
+        
+        session = sessions[session_id]
+        
+        # Submit answer if not navigating back
+        if action != 'previous':
+            session.submit_answer(answer)
+        
+        # Handle navigation
+        if action == 'next':
+            has_next = session.next_question()
+        elif action == 'previous':
+            has_next = session.previous_question()
+        elif action == 'skip':
+            has_next = session.skip_question()
+        else:
+            has_next = True
+        
+        # Check if questionnaire is completed
+        if session.completed:
+            return jsonify({
+                'success': True,
+                'completed': True,
+                'message': 'Questionnaire completed!',
+                'session_id': session_id
+            })
+        
+        # Get current question
+        current_question = session.get_current_question()
+        
+        return jsonify({
+            'success': True,
+            'completed': False,
+            'question': current_question
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route("/get_current_question", methods=["POST"])
+def get_current_question():
+    try:
+        data = request.json
+        session_id = data.get('session_id')
+        
+        if session_id not in sessions:
+            return jsonify({'success': False, 'error': 'Invalid session'}), 404
+        
+        session = sessions[session_id]
+        current_question = session.get_current_question()
+        
+        return jsonify({
+            'success': True,
+            'question': current_question,
+            'completed': session.completed
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route("/get_report", methods=["POST"])
+def get_report():
+    try:
+        data = request.json
+        session_id = data.get('session_id')
+        
+        if session_id not in sessions:
+            return jsonify({'success': False, 'error': 'Invalid session'}), 404
+        
+        session = sessions[session_id]
+        report = session.generate_report()
+        
+        # Clean up session after generating report
+        # del sessions[session_id]
+        
+        return jsonify({
+            'success': True,
+            'report': report
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route("/health_check", methods=["GET"])
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'active_sessions': len(sessions),
+        'timestamp': datetime.now().isoformat()
+    })
 
 if __name__ == "__main__":
     app.run(debug=True)
