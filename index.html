@@ -134,7 +134,7 @@
         const description = descriptionInput.value.trim();
         if (!symptom) return alert('Please enter a symptom.');
 
-        const res = await fetch('https://YOUR_RENDER_APP_URL/start_questionnaire', {
+        const res = await fetch('https://aushadham.onrender.com/start_questionnaire', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ symptom, description })
@@ -153,7 +153,7 @@
     async function submitAnswer(answer, action='next') {
         if (!sessionId) return;
 
-        const res = await fetch('https://YOUR_RENDER_APP_URL/submit_answer', {
+        const res = await fetch('https://aushadham.onrender.com/submit_answer', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ session_id: sessionId, answer, action })
@@ -197,7 +197,7 @@
     }
 
     async function showReport() {
-        const res = await fetch('https://YOUR_RENDER_APP_URL/get_report', {
+        const res = await fetch('https://aushadham.onrender.com/get_report', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ session_id: sessionId })
