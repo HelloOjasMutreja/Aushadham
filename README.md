@@ -1,3 +1,23 @@
+# Aushadham - Medical Healthcare Platform
+
+## Available Backends
+
+This project includes **two backend implementations**:
+
+1. **Python Flask Backend** - Original implementation (`app.py`)
+   - Run: `python app.py`
+   - Requirements: `pip install -r requirements.txt`
+
+2. **Java Spring Boot Backend** - New implementation (`aushadham-backend/`)
+   - Build: `cd aushadham-backend && mvn clean package`
+   - Run: `java -jar target/aushadham-backend-1.0-SNAPSHOT.jar`
+
+Both backends provide identical API functionality and work with the same frontend (`index.html`).
+
+📖 **See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for complete migration details.**
+
+---
+
 **Sanjeevani Pro: Bridging India’s Rural Healthcare Gap with AI and Voice-Driven Triage**  
 
 Sanjeevani Pro is a revolutionary healthcare platform designed to democratize access to quality medical care in India, with a laser focus on underserved rural populations. By integrating AI-powered symptom assessment, voice-based triage, and smart care coordination, the platform addresses systemic challenges such as acute doctor shortages, delayed diagnoses, and the near-absence of specialist care in remote regions. HealthAssist empowers patients to become the first point of contact in their healthcare journey, reducing unnecessary clinic visits, optimizing clinical efficiency, and ensuring critical cases receive urgent attention—all while lowering costs for patients and providers alike.  
