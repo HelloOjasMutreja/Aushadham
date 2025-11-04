@@ -10,7 +10,15 @@ Aushadham is a medical questionnaire API with user authentication that allows us
 
 **Base URL:** `http://localhost:5000`
 
-**Version:** 4.0
+**Version:** 4.1
+
+## Database Backend
+
+The API supports two database backends:
+- **Supabase** (recommended for production) - Cloud PostgreSQL with real-time capabilities
+- **SQLAlchemy** - Local SQLite/PostgreSQL/MySQL
+
+The API behavior is identical regardless of which backend is used. See [SUPABASE_SETUP.md](SUPABASE_SETUP.md) for setup instructions.
 
 ## Authentication
 

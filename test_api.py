@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """
 Test script for Aushadham API with authentication
+This script tests the API endpoints and works with both Supabase and SQLAlchemy backends.
 """
 import requests
 import json
 import sys
+import os
 
 BASE_URL = "http://127.0.0.1:5000"
+
+# Check which database backend is being used
+USE_SUPABASE = os.getenv('USE_SUPABASE', 'false').lower() == 'true'
+print(f"Testing with {'Supabase' if USE_SUPABASE else 'SQLAlchemy'} backend\n")
 
 def test_registration():
     """Test user registration"""
