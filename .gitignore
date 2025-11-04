@@ -26,3 +26,13 @@ __pycache__/
 .Python
 venv/
 env/
+
+# Environment and Database
+.env
+*.db
+*.sqlite
+*.sqlite3
+
+# Build artifacts
+dist/
+build/

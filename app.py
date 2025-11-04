@@ -1,13 +1,110 @@
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import secrets
 import uuid
-from datetime import datetime
+import bcrypt
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(16)
+app.secret_key = os.getenv('SECRET_KEY', secrets.token_hex(16))
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', secrets.token_hex(16))
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///aushadham.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 CORS(app, supports_credentials=True)
+db = SQLAlchemy(app)
+jwt = JWTManager(app)
+
+# Database Models
+class User(db.Model):
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    full_name = db.Column(db.String(120))
+    phone = db.Column(db.String(20))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    saved_questionnaires = db.relationship('SavedQuestionnaire', backref='user', lazy=True, cascade='all, delete-orphan')
+    feedback = db.relationship('UserFeedback', backref='user', lazy=True, cascade='all, delete-orphan')
+    
+    def set_password(self, password):
+        """Hash and set the password"""
+        self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    def check_password(self, password):
+        """Check if the provided password matches the hash"""
+        return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
+    
+    def to_dict(self):
+        """Convert user to dictionary (excluding password)"""
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'full_name': self.full_name,
+            'phone': self.phone,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class SavedQuestionnaire(db.Model):
+    __tablename__ = 'saved_questionnaires'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    session_id = db.Column(db.String(100), unique=True, nullable=False)
+    symptom = db.Column(db.String(200), nullable=False)
+    initial_description = db.Column(db.Text)
+    answers = db.Column(db.JSON, nullable=False)
+    report = db.Column(db.JSON)
+    severity = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert saved questionnaire to dictionary"""
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'symptom': self.symptom,
+            'initial_description': self.initial_description,
+            'answers': self.answers,
+            'report': self.report,
+            'severity': self.severity,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class UserFeedback(db.Model):
+    __tablename__ = 'user_feedback'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    questionnaire_id = db.Column(db.Integer, db.ForeignKey('saved_questionnaires.id'), nullable=True)
+    rating = db.Column(db.Integer)  # 1-5 star rating
+    comment = db.Column(db.Text)
+    feedback_type = db.Column(db.String(50))  # 'general', 'questionnaire', 'recommendation'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert feedback to dictionary"""
+        return {
+            'id': self.id,
+            'questionnaire_id': self.questionnaire_id,
+            'rating': self.rating,
+            'comment': self.comment,
+            'feedback_type': self.feedback_type,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
 
 # Comprehensive medical questionnaire knowledge base
 questionnaire_templates = {
@@ -564,20 +661,330 @@ class QuestionnaireSession:
 # Session storage
 sessions: Dict[str, QuestionnaireSession] = {}
 
+# Authentication Routes
+@app.route("/register", methods=["POST"])
+def register():
+    """Register a new user"""
+    try:
+        data = request.json
+        username = data.get('username')
+        email = data.get('email')
+        password = data.get('password')
+        full_name = data.get('full_name', '')
+        phone = data.get('phone', '')
+        
+        # Validate required fields
+        if not username or not email or not password:
+            return jsonify({'success': False, 'error': 'Username, email, and password are required'}), 400
+        
+        # Check if user already exists
+        if User.query.filter_by(username=username).first():
+            return jsonify({'success': False, 'error': 'Username already exists'}), 409
+        
+        if User.query.filter_by(email=email).first():
+            return jsonify({'success': False, 'error': 'Email already exists'}), 409
+        
+        # Create new user
+        user = User(
+            username=username,
+            email=email,
+            full_name=full_name,
+            phone=phone
+        )
+        user.set_password(password)
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        # Create access token
+        access_token = create_access_token(identity=user.id)
+        
+        return jsonify({
+            'success': True,
+            'message': 'User registered successfully',
+            'user': user.to_dict(),
+            'access_token': access_token
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route("/login", methods=["POST"])
+def login():
+    """Login a user"""
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({'success': False, 'error': 'Username and password are required'}), 400
+        
+        # Find user by username or email
+        user = User.query.filter(
+            (User.username == username) | (User.email == username)
+        ).first()
+        
+        if not user or not user.check_password(password):
+            return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
+        
+        # Create access token
+        access_token = create_access_token(identity=user.id)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Login successful',
+            'user': user.to_dict(),
+            'access_token': access_token
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route("/profile", methods=["GET"])
+@jwt_required()
+def get_profile():
+    """Get current user profile"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        return jsonify({
+            'success': True,
+            'user': user.to_dict()
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route("/profile", methods=["PUT"])
+@jwt_required()
+def update_profile():
+    """Update user profile"""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        data = request.json
+        
+        # Update allowed fields
+        if 'full_name' in data:
+            user.full_name = data['full_name']
+        if 'phone' in data:
+            user.phone = data['phone']
+        if 'email' in data:
+            # Check if email is already taken by another user
+            existing = User.query.filter(User.email == data['email'], User.id != user_id).first()
+            if existing:
+                return jsonify({'success': False, 'error': 'Email already in use'}), 409
+            user.email = data['email']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Profile updated successfully',
+            'user': user.to_dict()
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+# Questionnaire Management Routes
+@app.route("/save_questionnaire", methods=["POST"])
+@jwt_required()
+def save_questionnaire():
+    """Save a completed questionnaire for the user"""
+    try:
+        user_id = get_jwt_identity()
+        data = request.json
+        session_id = data.get('session_id')
+        
+        if not session_id or session_id not in sessions:
+            return jsonify({'success': False, 'error': 'Invalid session'}), 404
+        
+        session_obj = sessions[session_id]
+        
+        # Generate report if not already done
+        report = session_obj.generate_report()
+        
+        # Check if already saved
+        existing = SavedQuestionnaire.query.filter_by(session_id=session_id).first()
+        if existing:
+            return jsonify({'success': False, 'error': 'Questionnaire already saved'}), 409
+        
+        # Save to database
+        saved = SavedQuestionnaire(
+            user_id=user_id,
+            session_id=session_id,
+            symptom=session_obj.symptom,
+            initial_description=session_obj.initial_description,
+            answers=session_obj.answers,
+            report=report,
+            severity=report.get('severity', 'Unknown')
+        )
+        
+        db.session.add(saved)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Questionnaire saved successfully',
+            'questionnaire': saved.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route("/my_questionnaires", methods=["GET"])
+@jwt_required()
+def get_my_questionnaires():
+    """Get all questionnaires for the current user"""
+    try:
+        user_id = get_jwt_identity()
+        questionnaires = SavedQuestionnaire.query.filter_by(user_id=user_id).order_by(SavedQuestionnaire.created_at.desc()).all()
+        
+        return jsonify({
+            'success': True,
+            'questionnaires': [q.to_dict() for q in questionnaires],
+            'count': len(questionnaires)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route("/my_questionnaires/<int:questionnaire_id>", methods=["GET"])
+@jwt_required()
+def get_questionnaire_detail(questionnaire_id):
+    """Get details of a specific questionnaire"""
+    try:
+        user_id = get_jwt_identity()
+        questionnaire = SavedQuestionnaire.query.filter_by(id=questionnaire_id, user_id=user_id).first()
+        
+        if not questionnaire:
+            return jsonify({'success': False, 'error': 'Questionnaire not found'}), 404
+        
+        return jsonify({
+            'success': True,
+            'questionnaire': questionnaire.to_dict()
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route("/my_questionnaires/<int:questionnaire_id>", methods=["DELETE"])
+@jwt_required()
+def delete_questionnaire(questionnaire_id):
+    """Delete a specific questionnaire"""
+    try:
+        user_id = get_jwt_identity()
+        questionnaire = SavedQuestionnaire.query.filter_by(id=questionnaire_id, user_id=user_id).first()
+        
+        if not questionnaire:
+            return jsonify({'success': False, 'error': 'Questionnaire not found'}), 404
+        
+        db.session.delete(questionnaire)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Questionnaire deleted successfully'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+# Feedback Routes
+@app.route("/feedback", methods=["POST"])
+@jwt_required()
+def submit_feedback():
+    """Submit feedback"""
+    try:
+        user_id = get_jwt_identity()
+        data = request.json
+        
+        rating = data.get('rating')
+        comment = data.get('comment', '')
+        feedback_type = data.get('feedback_type', 'general')
+        questionnaire_id = data.get('questionnaire_id')
+        
+        # Validate rating
+        if rating and (rating < 1 or rating > 5):
+            return jsonify({'success': False, 'error': 'Rating must be between 1 and 5'}), 400
+        
+        # If questionnaire_id is provided, verify it belongs to the user
+        if questionnaire_id:
+            questionnaire = SavedQuestionnaire.query.filter_by(id=questionnaire_id, user_id=user_id).first()
+            if not questionnaire:
+                return jsonify({'success': False, 'error': 'Questionnaire not found'}), 404
+        
+        feedback = UserFeedback(
+            user_id=user_id,
+            questionnaire_id=questionnaire_id,
+            rating=rating,
+            comment=comment,
+            feedback_type=feedback_type
+        )
+        
+        db.session.add(feedback)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Feedback submitted successfully',
+            'feedback': feedback.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route("/my_feedback", methods=["GET"])
+@jwt_required()
+def get_my_feedback():
+    """Get all feedback submitted by the current user"""
+    try:
+        user_id = get_jwt_identity()
+        feedback_list = UserFeedback.query.filter_by(user_id=user_id).order_by(UserFeedback.created_at.desc()).all()
+        
+        return jsonify({
+            'success': True,
+            'feedback': [f.to_dict() for f in feedback_list],
+            'count': len(feedback_list)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({
         "status": "Medical Questionnaire API is running!",
-        "version": "3.0",
-        "endpoints": [
-            "/start_questionnaire",
-            "/submit_answer", 
-            "/next_question",
-            "/previous_question",
-            "/skip_question",
-            "/get_current_question",
-            "/get_report"
-        ]
+        "version": "4.0",
+        "features": ["User Authentication", "Save Questionnaires", "Feedback System"],
+        "endpoints": {
+            "authentication": [
+                "/register (POST)",
+                "/login (POST)",
+                "/profile (GET, PUT)"
+            ],
+            "questionnaire": [
+                "/start_questionnaire (POST)",
+                "/submit_answer (POST)", 
+                "/get_current_question (POST)",
+                "/get_report (POST)",
+                "/save_questionnaire (POST) [Auth Required]",
+                "/my_questionnaires (GET) [Auth Required]",
+                "/my_questionnaires/<id> (GET, DELETE) [Auth Required]"
+            ],
+            "feedback": [
+                "/feedback (POST) [Auth Required]",
+                "/my_feedback (GET) [Auth Required]"
+            ],
+            "health": [
+                "/health_check (GET)"
+            ]
+        }
     })
 
 @app.route("/start_questionnaire", methods=["POST"])
@@ -704,4 +1111,9 @@ def health_check():
     })
 
 if __name__ == "__main__":
+    # Create database tables
+    with app.app_context():
+        db.create_all()
+        print("Database tables created successfully!")
+    
     app.run(debug=True)
