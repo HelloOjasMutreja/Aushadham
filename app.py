@@ -10,6 +10,7 @@ from typing import Dict, List, Optional
 import os
 from dotenv import load_dotenv
 import logging
+from supabase_service import get_supabase_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -31,6 +32,24 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CORS(app, supports_credentials=True)
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
+
+# Initialize Supabase service if configured
+USE_SUPABASE = os.getenv('USE_SUPABASE', 'false').lower() == 'true'
+supabase_service = None
+
+if USE_SUPABASE:
+    try:
+        supabase_service = get_supabase_service()
+        if supabase_service:
+            logger.info("Using Supabase for database operations")
+        else:
+            logger.warning("Supabase configuration found but initialization failed. Falling back to SQLAlchemy.")
+            USE_SUPABASE = False
+    except Exception as e:
+        logger.error(f"Failed to initialize Supabase: {e}. Falling back to SQLAlchemy.")
+        USE_SUPABASE = False
+else:
+    logger.info("Using SQLAlchemy for database operations")
 
 # Database Models
 class User(db.Model):
@@ -686,36 +705,69 @@ def register():
         if not username or not email or not password:
             return jsonify({'success': False, 'error': 'Username, email, and password are required'}), 400
         
-        # Check if user already exists
-        if User.query.filter_by(username=username).first():
-            return jsonify({'success': False, 'error': 'Username already exists'}), 409
-        
-        if User.query.filter_by(email=email).first():
-            return jsonify({'success': False, 'error': 'Email already exists'}), 409
-        
-        # Create new user
-        user = User(
-            username=username,
-            email=email,
-            full_name=full_name,
-            phone=phone
-        )
-        user.set_password(password)
-        
-        db.session.add(user)
-        db.session.commit()
-        
-        # Create access token
-        access_token = create_access_token(identity=user.id)
-        
-        return jsonify({
-            'success': True,
-            'message': 'User registered successfully',
-            'user': user.to_dict(),
-            'access_token': access_token
-        }), 201
+        if USE_SUPABASE:
+            # Using Supabase
+            # Check if user already exists
+            if supabase_service.get_user_by_username(username):
+                return jsonify({'success': False, 'error': 'Username already exists'}), 409
+            
+            if supabase_service.get_user_by_email(email):
+                return jsonify({'success': False, 'error': 'Email already exists'}), 409
+            
+            # Create new user
+            user = supabase_service.create_user(username, email, password, full_name, phone)
+            if not user:
+                return jsonify({'success': False, 'error': 'Registration failed. Please try again.'}), 400
+            
+            # Create access token
+            access_token = create_access_token(identity=user['id'])
+            
+            return jsonify({
+                'success': True,
+                'message': 'User registered successfully',
+                'user': {
+                    'id': user['id'],
+                    'username': user['username'],
+                    'email': user['email'],
+                    'full_name': user.get('full_name', ''),
+                    'phone': user.get('phone', ''),
+                    'created_at': user.get('created_at')
+                },
+                'access_token': access_token
+            }), 201
+        else:
+            # Using SQLAlchemy
+            # Check if user already exists
+            if User.query.filter_by(username=username).first():
+                return jsonify({'success': False, 'error': 'Username already exists'}), 409
+            
+            if User.query.filter_by(email=email).first():
+                return jsonify({'success': False, 'error': 'Email already exists'}), 409
+            
+            # Create new user
+            user = User(
+                username=username,
+                email=email,
+                full_name=full_name,
+                phone=phone
+            )
+            user.set_password(password)
+            
+            db.session.add(user)
+            db.session.commit()
+            
+            # Create access token
+            access_token = create_access_token(identity=user.id)
+            
+            return jsonify({
+                'success': True,
+                'message': 'User registered successfully',
+                'user': user.to_dict(),
+                'access_token': access_token
+            }), 201
     except Exception as e:
-        db.session.rollback()
+        if not USE_SUPABASE:
+            db.session.rollback()
         logger.error(f"Registration error: {str(e)}")
         return jsonify({'success': False, 'error': 'Registration failed. Please try again.'}), 400
 
@@ -730,23 +782,51 @@ def login():
         if not username or not password:
             return jsonify({'success': False, 'error': 'Username and password are required'}), 400
         
-        # Find user by username or email
-        user = User.query.filter(
-            (User.username == username) | (User.email == username)
-        ).first()
-        
-        if not user or not user.check_password(password):
-            return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
-        
-        # Create access token
-        access_token = create_access_token(identity=user.id)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Login successful',
-            'user': user.to_dict(),
-            'access_token': access_token
-        })
+        if USE_SUPABASE:
+            # Using Supabase
+            # Find user by username or email
+            user = supabase_service.get_user_by_username(username)
+            if not user:
+                user = supabase_service.get_user_by_email(username)
+            
+            if not user or not supabase_service.verify_password(password, user['password_hash']):
+                return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
+            
+            # Create access token
+            access_token = create_access_token(identity=user['id'])
+            
+            return jsonify({
+                'success': True,
+                'message': 'Login successful',
+                'user': {
+                    'id': user['id'],
+                    'username': user['username'],
+                    'email': user['email'],
+                    'full_name': user.get('full_name', ''),
+                    'phone': user.get('phone', ''),
+                    'created_at': user.get('created_at')
+                },
+                'access_token': access_token
+            })
+        else:
+            # Using SQLAlchemy
+            # Find user by username or email
+            user = User.query.filter(
+                (User.username == username) | (User.email == username)
+            ).first()
+            
+            if not user or not user.check_password(password):
+                return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
+            
+            # Create access token
+            access_token = create_access_token(identity=user.id)
+            
+            return jsonify({
+                'success': True,
+                'message': 'Login successful',
+                'user': user.to_dict(),
+                'access_token': access_token
+            })
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
         return jsonify({'success': False, 'error': 'Login failed. Please try again.'}), 400
@@ -757,15 +837,33 @@ def get_profile():
     """Get current user profile"""
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
         
-        if not user:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
-        
-        return jsonify({
-            'success': True,
-            'user': user.to_dict()
-        })
+        if USE_SUPABASE:
+            user = supabase_service.get_user_by_id(user_id)
+            if not user:
+                return jsonify({'success': False, 'error': 'User not found'}), 404
+            
+            return jsonify({
+                'success': True,
+                'user': {
+                    'id': user['id'],
+                    'username': user['username'],
+                    'email': user['email'],
+                    'full_name': user.get('full_name', ''),
+                    'phone': user.get('phone', ''),
+                    'created_at': user.get('created_at')
+                }
+            })
+        else:
+            user = User.query.get(user_id)
+            
+            if not user:
+                return jsonify({'success': False, 'error': 'User not found'}), 404
+            
+            return jsonify({
+                'success': True,
+                'user': user.to_dict()
+            })
     except Exception as e:
         logger.error(f"Get profile error: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to retrieve profile.'}), 400
@@ -776,34 +874,67 @@ def update_profile():
     """Update user profile"""
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
-        
-        if not user:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
-        
         data = request.json
         
-        # Update allowed fields
-        if 'full_name' in data:
-            user.full_name = data['full_name']
-        if 'phone' in data:
-            user.phone = data['phone']
-        if 'email' in data:
-            # Check if email is already taken by another user
-            existing = User.query.filter(User.email == data['email'], User.id != user_id).first()
-            if existing:
-                return jsonify({'success': False, 'error': 'Email already in use'}), 409
-            user.email = data['email']
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Profile updated successfully',
-            'user': user.to_dict()
-        })
+        if USE_SUPABASE:
+            user = supabase_service.get_user_by_id(user_id)
+            if not user:
+                return jsonify({'success': False, 'error': 'User not found'}), 404
+            
+            updates = {}
+            if 'full_name' in data:
+                updates['full_name'] = data['full_name']
+            if 'phone' in data:
+                updates['phone'] = data['phone']
+            if 'email' in data:
+                # Check if email is already taken by another user
+                existing = supabase_service.get_user_by_email(data['email'])
+                if existing and existing['id'] != user_id:
+                    return jsonify({'success': False, 'error': 'Email already in use'}), 409
+                updates['email'] = data['email']
+            
+            updated_user = supabase_service.update_user(user_id, updates)
+            
+            return jsonify({
+                'success': True,
+                'message': 'Profile updated successfully',
+                'user': {
+                    'id': updated_user['id'],
+                    'username': updated_user['username'],
+                    'email': updated_user['email'],
+                    'full_name': updated_user.get('full_name', ''),
+                    'phone': updated_user.get('phone', ''),
+                    'created_at': updated_user.get('created_at')
+                }
+            })
+        else:
+            user = User.query.get(user_id)
+            
+            if not user:
+                return jsonify({'success': False, 'error': 'User not found'}), 404
+            
+            # Update allowed fields
+            if 'full_name' in data:
+                user.full_name = data['full_name']
+            if 'phone' in data:
+                user.phone = data['phone']
+            if 'email' in data:
+                # Check if email is already taken by another user
+                existing = User.query.filter(User.email == data['email'], User.id != user_id).first()
+                if existing:
+                    return jsonify({'success': False, 'error': 'Email already in use'}), 409
+                user.email = data['email']
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Profile updated successfully',
+                'user': user.to_dict()
+            })
     except Exception as e:
-        db.session.rollback()
+        if not USE_SUPABASE:
+            db.session.rollback()
         logger.error(f"Profile update error: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to update profile.'}), 400
 
@@ -825,32 +956,65 @@ def save_questionnaire():
         # Generate report if not already done
         report = session_obj.generate_report()
         
-        # Check if already saved
-        existing = SavedQuestionnaire.query.filter_by(session_id=session_id).first()
-        if existing:
-            return jsonify({'success': False, 'error': 'Questionnaire already saved'}), 409
-        
-        # Save to database
-        saved = SavedQuestionnaire(
-            user_id=user_id,
-            session_id=session_id,
-            symptom=session_obj.symptom,
-            initial_description=session_obj.initial_description,
-            answers=session_obj.answers,
-            report=report,
-            severity=report.get('severity', 'Unknown')
-        )
-        
-        db.session.add(saved)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Questionnaire saved successfully',
-            'questionnaire': saved.to_dict()
-        }), 201
+        if USE_SUPABASE:
+            # Check if already saved
+            existing = supabase_service.get_questionnaire_by_session_id(session_id)
+            if existing:
+                return jsonify({'success': False, 'error': 'Questionnaire already saved'}), 409
+            
+            # Save to Supabase
+            saved = supabase_service.save_questionnaire(
+                user_id=user_id,
+                session_id=session_id,
+                symptom=session_obj.symptom,
+                initial_description=session_obj.initial_description,
+                answers=session_obj.answers,
+                report=report,
+                severity=report.get('severity', 'Unknown')
+            )
+            
+            return jsonify({
+                'success': True,
+                'message': 'Questionnaire saved successfully',
+                'questionnaire': {
+                    'id': saved['id'],
+                    'session_id': saved['session_id'],
+                    'symptom': saved['symptom'],
+                    'initial_description': saved.get('initial_description'),
+                    'answers': saved['answers'],
+                    'report': saved.get('report'),
+                    'severity': saved.get('severity'),
+                    'created_at': saved.get('created_at')
+                }
+            }), 201
+        else:
+            # Check if already saved
+            existing = SavedQuestionnaire.query.filter_by(session_id=session_id).first()
+            if existing:
+                return jsonify({'success': False, 'error': 'Questionnaire already saved'}), 409
+            
+            # Save to database
+            saved = SavedQuestionnaire(
+                user_id=user_id,
+                session_id=session_id,
+                symptom=session_obj.symptom,
+                initial_description=session_obj.initial_description,
+                answers=session_obj.answers,
+                report=report,
+                severity=report.get('severity', 'Unknown')
+            )
+            
+            db.session.add(saved)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Questionnaire saved successfully',
+                'questionnaire': saved.to_dict()
+            }), 201
     except Exception as e:
-        db.session.rollback()
+        if not USE_SUPABASE:
+            db.session.rollback()
         logger.error(f"Save questionnaire error: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to save questionnaire.'}), 400
 
@@ -860,13 +1024,35 @@ def get_my_questionnaires():
     """Get all questionnaires for the current user"""
     try:
         user_id = get_jwt_identity()
-        questionnaires = SavedQuestionnaire.query.filter_by(user_id=user_id).order_by(SavedQuestionnaire.created_at.desc()).all()
         
-        return jsonify({
-            'success': True,
-            'questionnaires': [q.to_dict() for q in questionnaires],
-            'count': len(questionnaires)
-        })
+        if USE_SUPABASE:
+            questionnaires = supabase_service.get_user_questionnaires(user_id)
+            formatted_questionnaires = [
+                {
+                    'id': q['id'],
+                    'session_id': q['session_id'],
+                    'symptom': q['symptom'],
+                    'initial_description': q.get('initial_description'),
+                    'answers': q['answers'],
+                    'report': q.get('report'),
+                    'severity': q.get('severity'),
+                    'created_at': q.get('created_at')
+                } for q in questionnaires
+            ]
+            
+            return jsonify({
+                'success': True,
+                'questionnaires': formatted_questionnaires,
+                'count': len(formatted_questionnaires)
+            })
+        else:
+            questionnaires = SavedQuestionnaire.query.filter_by(user_id=user_id).order_by(SavedQuestionnaire.created_at.desc()).all()
+            
+            return jsonify({
+                'success': True,
+                'questionnaires': [q.to_dict() for q in questionnaires],
+                'count': len(questionnaires)
+            })
     except Exception as e:
         logger.error(f"Get questionnaires error: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to retrieve questionnaires.'}), 400
@@ -877,15 +1063,36 @@ def get_questionnaire_detail(questionnaire_id):
     """Get details of a specific questionnaire"""
     try:
         user_id = get_jwt_identity()
-        questionnaire = SavedQuestionnaire.query.filter_by(id=questionnaire_id, user_id=user_id).first()
         
-        if not questionnaire:
-            return jsonify({'success': False, 'error': 'Questionnaire not found'}), 404
-        
-        return jsonify({
-            'success': True,
-            'questionnaire': questionnaire.to_dict()
-        })
+        if USE_SUPABASE:
+            questionnaire = supabase_service.get_questionnaire_by_id(questionnaire_id, user_id)
+            
+            if not questionnaire:
+                return jsonify({'success': False, 'error': 'Questionnaire not found'}), 404
+            
+            return jsonify({
+                'success': True,
+                'questionnaire': {
+                    'id': questionnaire['id'],
+                    'session_id': questionnaire['session_id'],
+                    'symptom': questionnaire['symptom'],
+                    'initial_description': questionnaire.get('initial_description'),
+                    'answers': questionnaire['answers'],
+                    'report': questionnaire.get('report'),
+                    'severity': questionnaire.get('severity'),
+                    'created_at': questionnaire.get('created_at')
+                }
+            })
+        else:
+            questionnaire = SavedQuestionnaire.query.filter_by(id=questionnaire_id, user_id=user_id).first()
+            
+            if not questionnaire:
+                return jsonify({'success': False, 'error': 'Questionnaire not found'}), 404
+            
+            return jsonify({
+                'success': True,
+                'questionnaire': questionnaire.to_dict()
+            })
     except Exception as e:
         logger.error(f"Get questionnaire detail error: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to retrieve questionnaire.'}), 400
@@ -896,20 +1103,35 @@ def delete_questionnaire(questionnaire_id):
     """Delete a specific questionnaire"""
     try:
         user_id = get_jwt_identity()
-        questionnaire = SavedQuestionnaire.query.filter_by(id=questionnaire_id, user_id=user_id).first()
         
-        if not questionnaire:
-            return jsonify({'success': False, 'error': 'Questionnaire not found'}), 404
-        
-        db.session.delete(questionnaire)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Questionnaire deleted successfully'
-        })
+        if USE_SUPABASE:
+            questionnaire = supabase_service.get_questionnaire_by_id(questionnaire_id, user_id)
+            
+            if not questionnaire:
+                return jsonify({'success': False, 'error': 'Questionnaire not found'}), 404
+            
+            supabase_service.delete_questionnaire(questionnaire_id, user_id)
+            
+            return jsonify({
+                'success': True,
+                'message': 'Questionnaire deleted successfully'
+            })
+        else:
+            questionnaire = SavedQuestionnaire.query.filter_by(id=questionnaire_id, user_id=user_id).first()
+            
+            if not questionnaire:
+                return jsonify({'success': False, 'error': 'Questionnaire not found'}), 404
+            
+            db.session.delete(questionnaire)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Questionnaire deleted successfully'
+            })
     except Exception as e:
-        db.session.rollback()
+        if not USE_SUPABASE:
+            db.session.rollback()
         logger.error(f"Delete questionnaire error: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to delete questionnaire.'}), 400
 
@@ -931,30 +1153,59 @@ def submit_feedback():
         if rating is not None and (rating < 1 or rating > 5):
             return jsonify({'success': False, 'error': 'Rating must be between 1 and 5'}), 400
         
-        # If questionnaire_id is provided, verify it belongs to the user
-        if questionnaire_id:
-            questionnaire = SavedQuestionnaire.query.filter_by(id=questionnaire_id, user_id=user_id).first()
-            if not questionnaire:
-                return jsonify({'success': False, 'error': 'Questionnaire not found'}), 404
-        
-        feedback = UserFeedback(
-            user_id=user_id,
-            questionnaire_id=questionnaire_id,
-            rating=rating,
-            comment=comment,
-            feedback_type=feedback_type
-        )
-        
-        db.session.add(feedback)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Feedback submitted successfully',
-            'feedback': feedback.to_dict()
-        }), 201
+        if USE_SUPABASE:
+            # If questionnaire_id is provided, verify it belongs to the user
+            if questionnaire_id:
+                questionnaire = supabase_service.get_questionnaire_by_id(questionnaire_id, user_id)
+                if not questionnaire:
+                    return jsonify({'success': False, 'error': 'Questionnaire not found'}), 404
+            
+            feedback = supabase_service.create_feedback(
+                user_id=user_id,
+                questionnaire_id=questionnaire_id,
+                rating=rating,
+                comment=comment,
+                feedback_type=feedback_type
+            )
+            
+            return jsonify({
+                'success': True,
+                'message': 'Feedback submitted successfully',
+                'feedback': {
+                    'id': feedback['id'],
+                    'questionnaire_id': feedback.get('questionnaire_id'),
+                    'rating': feedback.get('rating'),
+                    'comment': feedback.get('comment'),
+                    'feedback_type': feedback.get('feedback_type'),
+                    'created_at': feedback.get('created_at')
+                }
+            }), 201
+        else:
+            # If questionnaire_id is provided, verify it belongs to the user
+            if questionnaire_id:
+                questionnaire = SavedQuestionnaire.query.filter_by(id=questionnaire_id, user_id=user_id).first()
+                if not questionnaire:
+                    return jsonify({'success': False, 'error': 'Questionnaire not found'}), 404
+            
+            feedback = UserFeedback(
+                user_id=user_id,
+                questionnaire_id=questionnaire_id,
+                rating=rating,
+                comment=comment,
+                feedback_type=feedback_type
+            )
+            
+            db.session.add(feedback)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Feedback submitted successfully',
+                'feedback': feedback.to_dict()
+            }), 201
     except Exception as e:
-        db.session.rollback()
+        if not USE_SUPABASE:
+            db.session.rollback()
         logger.error(f"Submit feedback error: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to submit feedback.'}), 400
 
@@ -964,13 +1215,33 @@ def get_my_feedback():
     """Get all feedback submitted by the current user"""
     try:
         user_id = get_jwt_identity()
-        feedback_list = UserFeedback.query.filter_by(user_id=user_id).order_by(UserFeedback.created_at.desc()).all()
         
-        return jsonify({
-            'success': True,
-            'feedback': [f.to_dict() for f in feedback_list],
-            'count': len(feedback_list)
-        })
+        if USE_SUPABASE:
+            feedback_list = supabase_service.get_user_feedback(user_id)
+            formatted_feedback = [
+                {
+                    'id': f['id'],
+                    'questionnaire_id': f.get('questionnaire_id'),
+                    'rating': f.get('rating'),
+                    'comment': f.get('comment'),
+                    'feedback_type': f.get('feedback_type'),
+                    'created_at': f.get('created_at')
+                } for f in feedback_list
+            ]
+            
+            return jsonify({
+                'success': True,
+                'feedback': formatted_feedback,
+                'count': len(formatted_feedback)
+            })
+        else:
+            feedback_list = UserFeedback.query.filter_by(user_id=user_id).order_by(UserFeedback.created_at.desc()).all()
+            
+            return jsonify({
+                'success': True,
+                'feedback': [f.to_dict() for f in feedback_list],
+                'count': len(feedback_list)
+            })
     except Exception as e:
         logger.error(f"Get feedback error: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to retrieve feedback.'}), 400
