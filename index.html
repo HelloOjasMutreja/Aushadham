@@ -47,21 +47,32 @@
 <div class="max-w-2xl mx-auto">
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
-        <button id="back-btn" class="w-12 h-12 rounded-xl bg-white shadow-md flex items-center justify-center hover:shadow-lg transition hidden">
-            <svg class="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
-            </svg>
-        </button>
-        <button id="home-btn" class="w-12 h-12 rounded-xl bg-white shadow-md flex items-center justify-center hover:shadow-lg transition hidden">
-            <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-            </svg>
-        </button>
-        <button id="profile-btn" class="w-12 h-12 rounded-xl bg-white shadow-md flex items-center justify-center hover:shadow-lg transition hidden">
-            <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-            </svg>
-        </button>
+        <div class="flex gap-2">
+            <button id="back-btn" class="w-12 h-12 rounded-xl bg-white shadow-md flex items-center justify-center hover:shadow-lg transition hidden">
+                <svg class="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <button id="home-btn" class="w-12 h-12 rounded-xl bg-white shadow-md flex items-center justify-center hover:shadow-lg transition hidden">
+                <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+            </button>
+            <button id="history-btn" class="w-12 h-12 rounded-xl bg-white shadow-md flex items-center justify-center hover:shadow-lg transition hidden">
+                <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </button>
+        </div>
+        <div class="flex gap-2">
+            <div id="user-display" class="hidden px-4 py-2 bg-white rounded-xl shadow-md text-sm font-semibold text-gray-700"></div>
+            <button id="login-btn" class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl shadow-md transition">
+                Login
+            </button>
+            <button id="logout-btn" class="hidden px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-xl shadow-md transition">
+                Logout
+            </button>
+        </div>
     </div>
 
     <div id="container-content" class="relative min-h-[600px]">
@@ -151,9 +162,100 @@
             
             <div id="report-content" class="space-y-4"></div>
             
-            <button id="restart-btn" class="mt-8 w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-5 px-6 rounded-2xl transition duration-300 text-lg shadow-lg shadow-cyan-500/20">
+            <div id="save-section" class="mt-6 bg-blue-50 rounded-2xl p-6 border-2 border-blue-400 hidden">
+                <p class="text-blue-800 mb-4 font-semibold">💾 Save this assessment to your account for future reference</p>
+                <button id="save-test-btn" class="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold py-4 px-6 rounded-xl transition shadow-lg">
+                    Save Test Results
+                </button>
+            </div>
+
+            <div id="login-prompt" class="mt-6 bg-yellow-50 rounded-2xl p-6 border-2 border-yellow-400 hidden">
+                <p class="text-yellow-800 mb-4 font-semibold">📋 Login to save your test results and track your health history</p>
+                <button id="login-to-save-btn" class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold py-4 px-6 rounded-xl transition shadow-lg">
+                    Login to Save
+                </button>
+            </div>
+            
+            <button id="restart-btn" class="mt-4 w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-5 px-6 rounded-2xl transition duration-300 text-lg shadow-lg shadow-cyan-500/20">
                 Start New Assessment
             </button>
+        </div>
+
+        <!-- History Section -->
+        <div id="history-section" class="section-fade section-hidden">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold mb-2 text-gray-900">Assessment History</h2>
+                <p class="text-gray-600">Your saved health assessments</p>
+            </div>
+            
+            <div id="history-content" class="space-y-4"></div>
+            
+            <div id="no-history" class="text-center py-12 hidden">
+                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <p class="text-gray-500">No saved assessments yet</p>
+            </div>
+        </div>
+
+        <!-- Login/Register Modal -->
+        <div id="auth-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="margin: 0;">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="auth-modal-title" class="text-2xl font-bold text-gray-900">Login</h2>
+                    <button id="close-auth-modal" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div id="login-form">
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold mb-2 text-gray-700">Username or Email</label>
+                        <input type="text" id="login-username" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none" />
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold mb-2 text-gray-700">Password</label>
+                        <input type="password" id="login-password" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none" />
+                    </div>
+                    <button id="login-submit-btn" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-bold py-3 rounded-xl transition mb-3">
+                        Login
+                    </button>
+                    <p class="text-center text-gray-600">
+                        Don't have an account? 
+                        <button id="switch-to-register" class="text-cyan-500 font-semibold hover:text-cyan-600">Register</button>
+                    </p>
+                </div>
+                
+                <div id="register-form" class="hidden">
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold mb-2 text-gray-700">Username</label>
+                        <input type="text" id="register-username" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none" />
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold mb-2 text-gray-700">Email</label>
+                        <input type="email" id="register-email" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none" />
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold mb-2 text-gray-700">Full Name (Optional)</label>
+                        <input type="text" id="register-fullname" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none" />
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold mb-2 text-gray-700">Password</label>
+                        <input type="password" id="register-password" class="w-full p-3 bg-gray-50 rounded-xl border-2 border-gray-200 focus:border-cyan-500 focus:outline-none" />
+                    </div>
+                    <button id="register-submit-btn" class="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-3 rounded-xl transition mb-3">
+                        Register
+                    </button>
+                    <p class="text-center text-gray-600">
+                        Already have an account? 
+                        <button id="switch-to-login" class="text-cyan-500 font-semibold hover:text-cyan-600">Login</button>
+                    </p>
+                </div>
+            </div>
         </div>
 
         <!-- Error Banner -->
@@ -171,7 +273,10 @@
     const evaluateBtn = document.getElementById('evaluate-btn');
     const backBtn = document.getElementById('back-btn');
     const homeBtn = document.getElementById('home-btn');
-    const profileBtn = document.getElementById('profile-btn');
+    const historyBtn = document.getElementById('history-btn');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userDisplay = document.getElementById('user-display');
     const backQuestionBtn = document.getElementById('back-question-btn');
     const skipQuestionBtn = document.getElementById('skip-question-btn');
     const symptomInput = document.getElementById('symptom-input');
@@ -180,6 +285,7 @@
     const startSection = document.getElementById('start-section');
     const questionSection = document.getElementById('question-section');
     const reportSection = document.getElementById('report-section');
+    const historySection = document.getElementById('history-section');
     
     const questionText = document.getElementById('question-text');
     const categoryLabel = document.getElementById('category-label');
@@ -189,6 +295,23 @@
     const progressBarFill = document.getElementById('progress-bar-fill');
     const progressText = document.getElementById('progress-text');
     const reportContent = document.getElementById('report-content');
+    const historyContent = document.getElementById('history-content');
+    const noHistory = document.getElementById('no-history');
+    
+    const saveSection = document.getElementById('save-section');
+    const loginPrompt = document.getElementById('login-prompt');
+    const saveTestBtn = document.getElementById('save-test-btn');
+    const loginToSaveBtn = document.getElementById('login-to-save-btn');
+    
+    const authModal = document.getElementById('auth-modal');
+    const authModalTitle = document.getElementById('auth-modal-title');
+    const closeAuthModal = document.getElementById('close-auth-modal');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const switchToRegister = document.getElementById('switch-to-register');
+    const switchToLogin = document.getElementById('switch-to-login');
+    const loginSubmitBtn = document.getElementById('login-submit-btn');
+    const registerSubmitBtn = document.getElementById('register-submit-btn');
     
     const errorBanner = document.getElementById('error-banner');
     const errorMessage = document.getElementById('error-message');
@@ -196,11 +319,13 @@
     // --- State ---
     let sessionId = null;
     let currentQuestion = null;
-    const API_BASE_URL = 'https://aushadham.onrender.com';
+    let currentUser = null;
+    let authToken = null;
+    const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://127.0.0.1:5000' : 'https://aushadham.onrender.com';
 
     // --- UI Control Functions ---
     const showSection = (sectionToShow) => {
-        [startSection, questionSection, reportSection].forEach(section => {
+        [startSection, questionSection, reportSection, historySection].forEach(section => {
             if (section.id === sectionToShow) {
                 section.classList.remove('section-hidden');
                 section.classList.add('section-visible');
@@ -212,9 +337,9 @@
 
         // Show/hide navigation buttons
         const showNav = sectionToShow !== 'start-section';
-        [backBtn, homeBtn, profileBtn].forEach(btn => {
-            btn.classList.toggle('hidden', !showNav);
-        });
+        backBtn.classList.toggle('hidden', !showNav);
+        homeBtn.classList.toggle('hidden', !showNav);
+        historyBtn.classList.toggle('hidden', !showNav || !authToken);
     };
 
     const setLoading = (button, isLoading) => {
@@ -238,14 +363,34 @@
         }, 5000);
     };
 
+    const showSuccess = (message) => {
+        const successBanner = document.createElement('div');
+        successBanner.className = 'fixed top-4 right-4 bg-green-50 border-2 border-green-400 text-green-800 px-6 py-4 rounded-xl shadow-lg z-50';
+        successBanner.innerHTML = `<strong class="font-bold">Success: </strong><span>${message}</span>`;
+        document.body.appendChild(successBanner);
+        setTimeout(() => {
+            successBanner.remove();
+        }, 3000);
+    };
+
     // --- API Call Wrapper ---
-    const apiCall = async (endpoint, body) => {
+    const apiCall = async (endpoint, body, method = 'POST', requiresAuth = false) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
+            const headers = { 'Content-Type': 'application/json' };
+            if (requiresAuth && authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+            
+            const options = {
+                method: method,
+                headers: headers
+            };
+            
+            if (body && method !== 'GET') {
+                options.body = JSON.stringify(body);
+            }
+            
+            const response = await fetch(`${API_BASE_URL}/${endpoint}`, options);
             const data = await response.json();
             if (!data.success) {
                 throw new Error(data.error || 'API request failed');
@@ -255,6 +400,126 @@
             console.error(`API Error on ${endpoint}:`, error);
             showError(error.message);
             return null;
+        }
+    };
+
+    // --- Authentication Functions ---
+    const initAuth = () => {
+        const storedToken = localStorage.getItem('authToken');
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedToken && storedUser) {
+            authToken = storedToken;
+            currentUser = JSON.parse(storedUser);
+            updateAuthUI();
+        }
+    };
+
+    const updateAuthUI = () => {
+        if (authToken && currentUser) {
+            loginBtn.classList.add('hidden');
+            logoutBtn.classList.remove('hidden');
+            userDisplay.classList.remove('hidden');
+            userDisplay.textContent = `👤 ${currentUser.username}`;
+            historyBtn.classList.remove('hidden');
+        } else {
+            loginBtn.classList.remove('hidden');
+            logoutBtn.classList.add('hidden');
+            userDisplay.classList.add('hidden');
+            historyBtn.classList.add('hidden');
+        }
+    };
+
+    const openAuthModal = (isRegister = false) => {
+        authModal.classList.remove('hidden');
+        if (isRegister) {
+            authModalTitle.textContent = 'Register';
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+        } else {
+            authModalTitle.textContent = 'Login';
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+        }
+    };
+
+    const closeAuthModalFn = () => {
+        authModal.classList.add('hidden');
+        // Clear form fields
+        document.getElementById('login-username').value = '';
+        document.getElementById('login-password').value = '';
+        document.getElementById('register-username').value = '';
+        document.getElementById('register-email').value = '';
+        document.getElementById('register-fullname').value = '';
+        document.getElementById('register-password').value = '';
+    };
+
+    const handleLogin = async () => {
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+        
+        if (!username || !password) {
+            showError('Please enter username and password');
+            return;
+        }
+        
+        loginSubmitBtn.disabled = true;
+        loginSubmitBtn.textContent = 'Logging in...';
+        
+        const data = await apiCall('login', { username, password });
+        
+        loginSubmitBtn.disabled = false;
+        loginSubmitBtn.textContent = 'Login';
+        
+        if (data) {
+            authToken = data.access_token;
+            currentUser = data.user;
+            localStorage.setItem('authToken', authToken);
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            updateAuthUI();
+            closeAuthModalFn();
+            showSuccess('Login successful!');
+        }
+    };
+
+    const handleRegister = async () => {
+        const username = document.getElementById('register-username').value.trim();
+        const email = document.getElementById('register-email').value.trim();
+        const password = document.getElementById('register-password').value;
+        const full_name = document.getElementById('register-fullname').value.trim();
+        
+        if (!username || !email || !password) {
+            showError('Please fill in all required fields');
+            return;
+        }
+        
+        registerSubmitBtn.disabled = true;
+        registerSubmitBtn.textContent = 'Registering...';
+        
+        const data = await apiCall('register', { username, email, password, full_name });
+        
+        registerSubmitBtn.disabled = false;
+        registerSubmitBtn.textContent = 'Register';
+        
+        if (data) {
+            authToken = data.access_token;
+            currentUser = data.user;
+            localStorage.setItem('authToken', authToken);
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            updateAuthUI();
+            closeAuthModalFn();
+            showSuccess('Registration successful!');
+        }
+    };
+
+    const handleLogout = () => {
+        authToken = null;
+        currentUser = null;
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('currentUser');
+        updateAuthUI();
+        showSuccess('Logged out successfully');
+        if (historySection.classList.contains('section-visible')) {
+            showSection('start-section');
         }
     };
 
@@ -374,6 +639,94 @@
             html += createList('Suggested Medications', report.suggested_medications, 'purple');
 
             reportContent.innerHTML = html;
+            
+            // Show save/login prompt
+            if (authToken) {
+                saveSection.classList.remove('hidden');
+                loginPrompt.classList.add('hidden');
+            } else {
+                saveSection.classList.add('hidden');
+                loginPrompt.classList.remove('hidden');
+            }
+        }
+    };
+
+    const saveTest = async () => {
+        if (!authToken) {
+            showError('Please login to save your test');
+            return;
+        }
+        
+        saveTestBtn.disabled = true;
+        saveTestBtn.textContent = 'Saving...';
+        
+        const data = await apiCall('save_questionnaire', { session_id: sessionId }, 'POST', true);
+        
+        saveTestBtn.disabled = false;
+        saveTestBtn.textContent = 'Save Test Results';
+        
+        if (data) {
+            showSuccess('Test results saved successfully!');
+            saveSection.classList.add('hidden');
+            saveTestBtn.textContent = '✓ Saved';
+        }
+    };
+
+    const loadHistory = async () => {
+        if (!authToken) {
+            showError('Please login to view history');
+            return;
+        }
+        
+        const data = await apiCall('my_questionnaires', null, 'GET', true);
+        
+        if (data) {
+            showSection('history-section');
+            
+            if (data.questionnaires && data.questionnaires.length > 0) {
+                historyContent.classList.remove('hidden');
+                noHistory.classList.add('hidden');
+                
+                let html = '';
+                data.questionnaires.forEach(q => {
+                    const date = new Date(q.created_at).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    const severityColor = {
+                        'High': 'red',
+                        'Moderate': 'yellow',
+                        'Low': 'green'
+                    }[q.severity] || 'gray';
+                    
+                    html += `
+                        <div class="bg-white rounded-2xl p-6 shadow-md border-l-4 border-${severityColor}-400 card-hover">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h3 class="font-bold text-xl text-gray-900 mb-1">${q.symptom}</h3>
+                                    <p class="text-sm text-gray-500">${date}</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-${severityColor}-100 text-${severityColor}-700">
+                                    ${q.severity}
+                                </span>
+                            </div>
+                            ${q.initial_description ? `<p class="text-gray-600 mb-3">${q.initial_description}</p>` : ''}
+                            <div class="text-sm text-gray-500">
+                                Session: ${q.session_id.substring(0, 8)}...
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                historyContent.innerHTML = html;
+            } else {
+                historyContent.classList.add('hidden');
+                noHistory.classList.remove('hidden');
+            }
         }
     };
 
@@ -383,8 +736,40 @@
     evaluateBtn.addEventListener('click', () => showReport());
     backBtn.addEventListener('click', () => showSection('start-section'));
     homeBtn.addEventListener('click', () => showSection('start-section'));
+    historyBtn.addEventListener('click', loadHistory);
     backQuestionBtn.addEventListener('click', () => submitAnswer('', 'previous'));
     skipQuestionBtn.addEventListener('click', () => submitAnswer('Skipped', 'skip'));
+
+    // Authentication event listeners
+    loginBtn.addEventListener('click', () => openAuthModal(false));
+    logoutBtn.addEventListener('click', handleLogout);
+    closeAuthModal.addEventListener('click', closeAuthModalFn);
+    switchToRegister.addEventListener('click', () => openAuthModal(true));
+    switchToLogin.addEventListener('click', () => openAuthModal(false));
+    loginSubmitBtn.addEventListener('click', handleLogin);
+    registerSubmitBtn.addEventListener('click', handleRegister);
+    
+    // Save test listeners
+    saveTestBtn.addEventListener('click', saveTest);
+    loginToSaveBtn.addEventListener('click', () => openAuthModal(false));
+    
+    // Close modal on outside click
+    authModal.addEventListener('click', (e) => {
+        if (e.target === authModal) {
+            closeAuthModalFn();
+        }
+    });
+    
+    // Allow Enter key to submit forms
+    document.getElementById('login-password').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleLogin();
+    });
+    document.getElementById('register-password').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleRegister();
+    });
+
+    // Initialize authentication on page load
+    initAuth();
 
 </script>
 
