@@ -1,27 +1,47 @@
 # Aushadham - Medical Healthcare Platform
 
-## 🆕 New Features (v4.0)
+## 🆕 New Features (v4.1)
 
-The platform now includes a complete **user authentication system** with the ability to save questionnaire responses and provide feedback!
+The platform now includes **Supabase integration** for scalable cloud database support!
 
-### New Features:
+### Latest Features:
+- ✅ **Supabase Integration** - Modern cloud PostgreSQL database with real-time capabilities
 - ✅ **User Registration & Login** - Secure authentication with JWT tokens
 - ✅ **Save Questionnaires** - Users can save their medical assessments to their profile
 - ✅ **Feedback System** - Rate and provide feedback on questionnaires
 - ✅ **User Profiles** - Manage personal information and view history
 - ✅ **Secure Password Storage** - Bcrypt password hashing
-- ✅ **Database Support** - SQLite, PostgreSQL, or MySQL
+- ✅ **Flexible Database Support** - Supabase, SQLite, PostgreSQL, or MySQL
 
-📖 **See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for complete API reference.**
+📖 **See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for complete API reference.**  
+📖 **See [SUPABASE_SETUP.md](SUPABASE_SETUP.md) for Supabase setup guide.**
+
+## Database Options
+
+The application supports two database backends:
+
+### 1. Supabase (Recommended for Production)
+- Cloud-hosted PostgreSQL database
+- Built-in real-time capabilities
+- Easy scaling and backups
+- Row Level Security (RLS)
+- Free tier available
+
+See [SUPABASE_SETUP.md](SUPABASE_SETUP.md) for detailed setup instructions.
+
+### 2. SQLAlchemy (Local Development)
+- SQLite, PostgreSQL, or MySQL
+- Simple local development
+- No external dependencies
 
 ## Available Backends
 
 This project includes **two backend implementations**:
 
-1. **Python Flask Backend** - Enhanced with authentication (`app.py`)
+1. **Python Flask Backend** - Enhanced with authentication and Supabase (`app.py`)
    - Run: `python app.py`
    - Requirements: `pip install -r requirements.txt`
-   - Features: User authentication, database storage, JWT tokens
+   - Features: User authentication, Supabase/SQLAlchemy support, JWT tokens
 
 2. **Java Spring Boot Backend** - New implementation (`aushadham-backend/`)
    - Build: `cd aushadham-backend && mvn clean package`
@@ -31,13 +51,31 @@ This project includes **two backend implementations**:
 
 ## Quick Start
 
-### Setup
+### Setup with Supabase (Recommended)
 ```bash
 # Install dependencies
 pip install -r requirements.txt
 
-# Optional: Create .env file for configuration
+# Create .env file for configuration
 cp .env.example .env
+
+# Edit .env and add your Supabase credentials
+# USE_SUPABASE=true
+# SUPABASE_URL=https://your-project.supabase.co
+# SUPABASE_KEY=your-anon-key
+
+# Run the application
+python app.py
+```
+
+### Setup with Local Database
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Optional: Create .env file
+cp .env.example .env
+# Set USE_SUPABASE=false or leave it out
 
 # Run the application
 python app.py
