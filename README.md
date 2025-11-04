@@ -1,20 +1,55 @@
 # Aushadham - Medical Healthcare Platform
 
+## 🆕 New Features (v4.0)
+
+The platform now includes a complete **user authentication system** with the ability to save questionnaire responses and provide feedback!
+
+### New Features:
+- ✅ **User Registration & Login** - Secure authentication with JWT tokens
+- ✅ **Save Questionnaires** - Users can save their medical assessments to their profile
+- ✅ **Feedback System** - Rate and provide feedback on questionnaires
+- ✅ **User Profiles** - Manage personal information and view history
+- ✅ **Secure Password Storage** - Bcrypt password hashing
+- ✅ **Database Support** - SQLite, PostgreSQL, or MySQL
+
+📖 **See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for complete API reference.**
+
 ## Available Backends
 
 This project includes **two backend implementations**:
 
-1. **Python Flask Backend** - Original implementation (`app.py`)
+1. **Python Flask Backend** - Enhanced with authentication (`app.py`)
    - Run: `python app.py`
    - Requirements: `pip install -r requirements.txt`
+   - Features: User authentication, database storage, JWT tokens
 
 2. **Java Spring Boot Backend** - New implementation (`aushadham-backend/`)
    - Build: `cd aushadham-backend && mvn clean package`
    - Run: `java -jar target/aushadham-backend-1.0-SNAPSHOT.jar`
 
-Both backends provide identical API functionality and work with the same frontend (`index.html`).
-
 📖 **See [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for complete migration details.**
+
+## Quick Start
+
+### Setup
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Optional: Create .env file for configuration
+cp .env.example .env
+
+# Run the application
+python app.py
+```
+
+The API will be available at `http://localhost:5000`
+
+### Testing
+```bash
+# Run the test suite
+python test_api.py
+```
 
 ---
 
