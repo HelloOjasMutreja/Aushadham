@@ -9,8 +9,17 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import os
 from dotenv import load_dotenv
+import logging
 
-load_dotenv()
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Load environment variables
+try:
+    load_dotenv()
+except Exception as e:
+    logger.warning(f"Could not load .env file: {e}. Using default configuration.")
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', secrets.token_hex(16))
@@ -707,7 +716,8 @@ def register():
         }), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 400
+        logger.error(f"Registration error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Registration failed. Please try again.'}), 400
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -738,7 +748,8 @@ def login():
             'access_token': access_token
         })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 400
+        logger.error(f"Login error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Login failed. Please try again.'}), 400
 
 @app.route("/profile", methods=["GET"])
 @jwt_required()
@@ -756,7 +767,8 @@ def get_profile():
             'user': user.to_dict()
         })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 400
+        logger.error(f"Get profile error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve profile.'}), 400
 
 @app.route("/profile", methods=["PUT"])
 @jwt_required()
@@ -792,7 +804,8 @@ def update_profile():
         })
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 400
+        logger.error(f"Profile update error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to update profile.'}), 400
 
 # Questionnaire Management Routes
 @app.route("/save_questionnaire", methods=["POST"])
@@ -838,7 +851,8 @@ def save_questionnaire():
         }), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 400
+        logger.error(f"Save questionnaire error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to save questionnaire.'}), 400
 
 @app.route("/my_questionnaires", methods=["GET"])
 @jwt_required()
@@ -854,7 +868,8 @@ def get_my_questionnaires():
             'count': len(questionnaires)
         })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 400
+        logger.error(f"Get questionnaires error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve questionnaires.'}), 400
 
 @app.route("/my_questionnaires/<int:questionnaire_id>", methods=["GET"])
 @jwt_required()
@@ -872,7 +887,8 @@ def get_questionnaire_detail(questionnaire_id):
             'questionnaire': questionnaire.to_dict()
         })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 400
+        logger.error(f"Get questionnaire detail error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve questionnaire.'}), 400
 
 @app.route("/my_questionnaires/<int:questionnaire_id>", methods=["DELETE"])
 @jwt_required()
@@ -894,7 +910,8 @@ def delete_questionnaire(questionnaire_id):
         })
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 400
+        logger.error(f"Delete questionnaire error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to delete questionnaire.'}), 400
 
 # Feedback Routes
 @app.route("/feedback", methods=["POST"])
@@ -910,8 +927,8 @@ def submit_feedback():
         feedback_type = data.get('feedback_type', 'general')
         questionnaire_id = data.get('questionnaire_id')
         
-        # Validate rating
-        if rating and (rating < 1 or rating > 5):
+        # Validate rating (must be provided and between 1-5)
+        if rating is not None and (rating < 1 or rating > 5):
             return jsonify({'success': False, 'error': 'Rating must be between 1 and 5'}), 400
         
         # If questionnaire_id is provided, verify it belongs to the user
@@ -938,7 +955,8 @@ def submit_feedback():
         }), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 400
+        logger.error(f"Submit feedback error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to submit feedback.'}), 400
 
 @app.route("/my_feedback", methods=["GET"])
 @jwt_required()
@@ -954,7 +972,8 @@ def get_my_feedback():
             'count': len(feedback_list)
         })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 400
+        logger.error(f"Get feedback error: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve feedback.'}), 400
 
 @app.route("/", methods=["GET"])
 def home():

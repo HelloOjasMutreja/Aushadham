@@ -158,7 +158,7 @@ if __name__ == "__main__":
     try:
         main()
     except requests.exceptions.ConnectionError:
-        print("Error: Could not connect to API. Make sure the server is running at http://127.0.0.1:5000")
+        print(f"Error: Could not connect to API. Make sure the server is running at {BASE_URL}")
         sys.exit(1)
     except Exception as e:
         print(f"Error during testing: {e}")
