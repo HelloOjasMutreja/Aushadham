@@ -2025,10 +2025,14 @@ def health_check():
         'timestamp': datetime.now().isoformat()
     })
 
-if __name__ == "__main__":
-    # Create database tables
+# Create database tables on app initialization (only if not using Supabase)
+if not USE_SUPABASE:
     with app.app_context():
-        db.create_all()
-        print("Database tables created successfully!")
-    
+        try:
+            db.create_all()
+            logger.info("Database tables created successfully!")
+        except Exception as e:
+            logger.error(f"Failed to create database tables: {e}")
+
+if __name__ == "__main__":
     app.run(debug=True)
