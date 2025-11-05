@@ -11,6 +11,11 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        body.dark-mode {
+            background-color: #1a202c;
+            color: #e2e8f0;
         }
         .no-scrollbar::-webkit-scrollbar {
             display: none;
@@ -40,6 +45,41 @@
         .card-hover:hover {
             transform: translateY(-2px);
         }
+        /* Dark mode styles */
+        .dark-mode .bg-gray-50 {
+            background-color: #2d3748 !important;
+        }
+        .dark-mode .bg-white {
+            background-color: #2d3748 !important;
+        }
+        .dark-mode .text-gray-900 {
+            color: #e2e8f0 !important;
+        }
+        .dark-mode .text-gray-700 {
+            color: #cbd5e0 !important;
+        }
+        .dark-mode .text-gray-600 {
+            color: #a0aec0 !important;
+        }
+        .dark-mode .text-gray-500 {
+            color: #718096 !important;
+        }
+        .dark-mode .border-gray-200 {
+            border-color: #4a5568 !important;
+        }
+        .dark-mode .bg-gray-100 {
+            background-color: #4a5568 !important;
+        }
+        .dark-mode input,
+        .dark-mode textarea {
+            background-color: #374151 !important;
+            color: #e2e8f0 !important;
+        }
+        .dark-mode .shadow-md,
+        .dark-mode .shadow-lg,
+        .dark-mode .shadow-2xl {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen p-4">
@@ -65,6 +105,14 @@
             </button>
         </div>
         <div class="flex gap-2">
+            <button id="theme-toggle-btn" class="w-12 h-12 rounded-xl bg-white shadow-md flex items-center justify-center hover:shadow-lg transition">
+                <svg id="theme-icon-sun" class="w-6 h-6 text-yellow-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                <svg id="theme-icon-moon" class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                </svg>
+            </button>
             <div id="user-display" class="hidden px-4 py-2 bg-white rounded-xl shadow-md text-sm font-semibold text-gray-700"></div>
             <button id="login-btn" class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl shadow-md transition">
                 Login
@@ -770,6 +818,40 @@
 
     // Initialize authentication on page load
     initAuth();
+
+    // --- Theme Management ---
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const themeIconSun = document.getElementById('theme-icon-sun');
+    const themeIconMoon = document.getElementById('theme-icon-moon');
+
+    const initTheme = () => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            themeIconSun.classList.remove('hidden');
+            themeIconMoon.classList.add('hidden');
+        }
+    };
+
+    const toggleTheme = () => {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        
+        if (isDark) {
+            localStorage.setItem('theme', 'dark');
+            themeIconSun.classList.remove('hidden');
+            themeIconMoon.classList.add('hidden');
+        } else {
+            localStorage.setItem('theme', 'light');
+            themeIconSun.classList.add('hidden');
+            themeIconMoon.classList.remove('hidden');
+        }
+    };
+
+    themeToggleBtn.addEventListener('click', toggleTheme);
+    
+    // Initialize theme on page load
+    initTheme();
 
 </script>
 
