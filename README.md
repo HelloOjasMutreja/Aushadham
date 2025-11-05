@@ -85,9 +85,14 @@ The API will be available at `http://localhost:5000`
 
 ### Testing
 ```bash
+# Create test user accounts for easier testing
+python seed_test_users.py
+
 # Run the test suite
 python test_api.py
 ```
+
+📋 **See [TEST_ACCOUNTS.md](TEST_ACCOUNTS.md) for pre-configured test account credentials.**
 
 ---
 
