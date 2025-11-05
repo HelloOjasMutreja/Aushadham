@@ -480,6 +480,550 @@ questionnaire_templates = {
             }
         ],
         'conditional_questions': {}
+    },
+    'cancer': {
+        'initial_questions': [
+            {
+                'id': 'concern_type',
+                'question': 'What type of cancer-related concern do you have?',
+                'type': 'choice',
+                'options': ['Screening/Prevention', 'Suspicious symptoms', 'Diagnosed - need support', 'Family history concern'],
+                'weight': 'high'
+            },
+            {
+                'id': 'unexplained_weight_loss',
+                'question': 'Have you experienced unexplained weight loss (more than 10 lbs in 6 months)?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'persistent_fatigue',
+                'question': 'Do you have persistent, unexplained fatigue lasting more than 2 weeks?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'unusual_lumps',
+                'question': 'Have you noticed any unusual lumps or masses anywhere on your body?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'persistent_pain',
+                'question': 'Do you have persistent pain that has lasted more than 4 weeks without clear cause?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'skin_changes',
+                'question': 'Have you noticed any unusual skin changes (new moles, changes to existing moles, jaundice)?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'bleeding',
+                'question': 'Have you experienced any unusual bleeding (coughing blood, blood in stool/urine)?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'bowel_bladder_changes',
+                'question': 'Have you noticed persistent changes in bowel or bladder habits?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'difficulty_swallowing',
+                'question': 'Do you have persistent difficulty swallowing or indigestion?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'persistent_cough',
+                'question': 'Do you have a persistent cough or hoarseness lasting more than 3 weeks?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'family_history',
+                'question': 'Do you have a family history of cancer?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'tobacco_use',
+                'question': 'Do you use tobacco products or have you in the past?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'age',
+                'question': 'What is your age group?',
+                'type': 'choice',
+                'options': ['Under 40', '40-50', '50-65', 'Over 65'],
+                'weight': 'medium'
+            }
+        ],
+        'conditional_questions': {
+            'unusual_lumps': {
+                'yes': [
+                    {
+                        'id': 'lump_location',
+                        'question': 'Where is the lump located?',
+                        'type': 'choice',
+                        'options': ['Breast', 'Neck', 'Armpit', 'Groin', 'Other location'],
+                        'weight': 'high'
+                    }
+                ]
+            },
+            'family_history': {
+                'yes': [
+                    {
+                        'id': 'family_cancer_type',
+                        'question': 'What type of cancer did your family member have?',
+                        'type': 'choice',
+                        'options': ['Breast', 'Colon', 'Lung', 'Prostate', 'Other'],
+                        'weight': 'medium'
+                    }
+                ]
+            }
+        }
+    },
+    'diabetes': {
+        'initial_questions': [
+            {
+                'id': 'diagnosed',
+                'question': 'Have you been diagnosed with diabetes?',
+                'type': 'choice',
+                'options': ['Yes, Type 1', 'Yes, Type 2', 'Pre-diabetic', 'No, but concerned', 'Not sure'],
+                'weight': 'high'
+            },
+            {
+                'id': 'increased_thirst',
+                'question': 'Have you been experiencing increased thirst (polydipsia)?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'frequent_urination',
+                'question': 'Are you urinating more frequently than usual?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'unexplained_hunger',
+                'question': 'Do you feel hungry even after eating (polyphagia)?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'unexplained_weight_loss',
+                'question': 'Have you lost weight without trying?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'fatigue',
+                'question': 'Do you feel unusually tired or fatigued?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'blurred_vision',
+                'question': 'Have you experienced blurred vision?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'slow_healing',
+                'question': 'Do cuts or wounds heal slowly?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'tingling',
+                'question': 'Do you have tingling or numbness in hands or feet?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'frequent_infections',
+                'question': 'Do you get frequent infections (skin, gum, urinary)?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'family_history',
+                'question': 'Do you have a family history of diabetes?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'bmi',
+                'question': 'What is your body mass index (BMI) range?',
+                'type': 'choice',
+                'options': ['Normal (18.5-24.9)', 'Overweight (25-29.9)', 'Obese (30+)', 'Not sure'],
+                'weight': 'medium'
+            },
+            {
+                'id': 'exercise',
+                'question': 'How often do you exercise?',
+                'type': 'choice',
+                'options': ['Daily', '3-5 times/week', '1-2 times/week', 'Rarely or never'],
+                'weight': 'low'
+            },
+            {
+                'id': 'last_checkup',
+                'question': 'When was your last blood sugar test?',
+                'type': 'choice',
+                'options': ['Within 3 months', '3-6 months ago', '6-12 months ago', 'Over 1 year ago', 'Never'],
+                'weight': 'medium'
+            }
+        ],
+        'conditional_questions': {
+            'diagnosed': {
+                'yes, type 1': [
+                    {
+                        'id': 'insulin_regimen',
+                        'question': 'Are you following your prescribed insulin regimen?',
+                        'type': 'yes_no',
+                        'weight': 'high'
+                    }
+                ],
+                'yes, type 2': [
+                    {
+                        'id': 'medication_compliance',
+                        'question': 'Are you taking your diabetes medication as prescribed?',
+                        'type': 'yes_no',
+                        'weight': 'high'
+                    }
+                ]
+            }
+        }
+    },
+    'hypertension': {
+        'initial_questions': [
+            {
+                'id': 'diagnosed',
+                'question': 'Have you been diagnosed with high blood pressure (hypertension)?',
+                'type': 'choice',
+                'options': ['Yes, currently treated', 'Yes, not on medication', 'Borderline/pre-hypertension', 'No, but concerned'],
+                'weight': 'high'
+            },
+            {
+                'id': 'recent_reading',
+                'question': 'Do you know your most recent blood pressure reading?',
+                'type': 'choice',
+                'options': ['Normal (<120/80)', 'Elevated (120-129/<80)', 'Stage 1 (130-139/80-89)', 'Stage 2 (≥140/90)', 'Not sure'],
+                'weight': 'high'
+            },
+            {
+                'id': 'headaches',
+                'question': 'Do you experience frequent headaches, especially in the morning?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'dizziness',
+                'question': 'Do you experience dizziness or lightheadedness?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'chest_pain',
+                'question': 'Have you experienced chest pain or tightness?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'shortness_breath',
+                'question': 'Do you have shortness of breath, especially during physical activity?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'palpitations',
+                'question': 'Do you experience heart palpitations or irregular heartbeat?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'nosebleeds',
+                'question': 'Do you get frequent nosebleeds?',
+                'type': 'yes_no',
+                'weight': 'low'
+            },
+            {
+                'id': 'vision_problems',
+                'question': 'Have you noticed any vision changes or blood spots in eyes?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'family_history',
+                'question': 'Do you have a family history of hypertension or heart disease?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'salt_intake',
+                'question': 'How would you describe your salt intake?',
+                'type': 'choice',
+                'options': ['Low (rarely add salt)', 'Moderate', 'High (frequently add salt)', 'Very high (eat a lot of processed foods)'],
+                'weight': 'medium'
+            },
+            {
+                'id': 'stress_level',
+                'question': 'How would you rate your stress level?',
+                'type': 'choice',
+                'options': ['Low', 'Moderate', 'High', 'Very high'],
+                'weight': 'medium'
+            },
+            {
+                'id': 'exercise',
+                'question': 'How often do you exercise?',
+                'type': 'choice',
+                'options': ['Daily', '3-5 times/week', '1-2 times/week', 'Rarely or never'],
+                'weight': 'medium'
+            },
+            {
+                'id': 'alcohol',
+                'question': 'Do you consume alcohol regularly?',
+                'type': 'yes_no',
+                'weight': 'low'
+            }
+        ],
+        'conditional_questions': {
+            'diagnosed': {
+                'yes, currently treated': [
+                    {
+                        'id': 'medication_compliance',
+                        'question': 'Are you taking your blood pressure medication as prescribed?',
+                        'type': 'yes_no',
+                        'weight': 'high'
+                    }
+                ]
+            }
+        }
+    },
+    'asthma': {
+        'initial_questions': [
+            {
+                'id': 'diagnosed',
+                'question': 'Have you been diagnosed with asthma?',
+                'type': 'choice',
+                'options': ['Yes, childhood asthma', 'Yes, adult-onset asthma', 'No, but suspected', 'Not sure'],
+                'weight': 'high'
+            },
+            {
+                'id': 'shortness_breath',
+                'question': 'Do you experience shortness of breath or difficulty breathing?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'wheezing',
+                'question': 'Do you have wheezing (whistling sound when breathing)?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'chest_tightness',
+                'question': 'Do you experience chest tightness or pressure?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'coughing',
+                'question': 'Do you have persistent coughing, especially at night or early morning?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'trigger_exercise',
+                'question': 'Are your symptoms triggered or worsened by exercise?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'trigger_allergens',
+                'question': 'Are your symptoms triggered by allergens (pollen, dust, pet dander)?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'trigger_weather',
+                'question': 'Are your symptoms triggered by cold air or weather changes?',
+                'type': 'yes_no',
+                'weight': 'low'
+            },
+            {
+                'id': 'trigger_stress',
+                'question': 'Are your symptoms triggered by stress or strong emotions?',
+                'type': 'yes_no',
+                'weight': 'low'
+            },
+            {
+                'id': 'night_symptoms',
+                'question': 'Do you wake up at night due to breathing difficulties?',
+                'type': 'choice',
+                'options': ['Never', 'Once a month', 'Once a week', 'More than once a week'],
+                'weight': 'high'
+            },
+            {
+                'id': 'activity_limitation',
+                'question': 'Do asthma symptoms limit your daily activities?',
+                'type': 'choice',
+                'options': ['Never', 'Occasionally', 'Frequently', 'Always'],
+                'weight': 'high'
+            },
+            {
+                'id': 'rescue_inhaler',
+                'question': 'How often do you use a rescue inhaler?',
+                'type': 'choice',
+                'options': ['Not applicable', 'Less than 2 times/week', '2+ times/week', 'Daily', 'Multiple times daily'],
+                'weight': 'high'
+            },
+            {
+                'id': 'family_history',
+                'question': 'Do you have a family history of asthma or allergies?',
+                'type': 'yes_no',
+                'weight': 'low'
+            },
+            {
+                'id': 'smoking',
+                'question': 'Do you smoke or are you exposed to secondhand smoke?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            }
+        ],
+        'conditional_questions': {
+            'diagnosed': {
+                'yes, childhood asthma': [
+                    {
+                        'id': 'current_medication',
+                        'question': 'Are you currently on asthma medication?',
+                        'type': 'yes_no',
+                        'weight': 'high'
+                    }
+                ],
+                'yes, adult-onset asthma': [
+                    {
+                        'id': 'current_medication',
+                        'question': 'Are you currently on asthma medication?',
+                        'type': 'yes_no',
+                        'weight': 'high'
+                    }
+                ]
+            }
+        }
+    },
+    'arthritis': {
+        'initial_questions': [
+            {
+                'id': 'type',
+                'question': 'What type of arthritis concern do you have?',
+                'type': 'choice',
+                'options': ['Diagnosed - osteoarthritis', 'Diagnosed - rheumatoid arthritis', 'Diagnosed - other type', 'Not diagnosed, experiencing symptoms'],
+                'weight': 'high'
+            },
+            {
+                'id': 'joint_pain',
+                'question': 'Are you experiencing joint pain?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'affected_joints',
+                'question': 'Which joints are most affected?',
+                'type': 'choice',
+                'options': ['Hands/fingers', 'Knees', 'Hips', 'Shoulders', 'Back/spine', 'Multiple joints'],
+                'weight': 'high'
+            },
+            {
+                'id': 'stiffness',
+                'question': 'Do you experience joint stiffness, especially in the morning?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'stiffness_duration',
+                'question': 'If you have morning stiffness, how long does it last?',
+                'type': 'choice',
+                'options': ['No stiffness', 'Less than 30 minutes', '30-60 minutes', 'More than 1 hour'],
+                'weight': 'high'
+            },
+            {
+                'id': 'swelling',
+                'question': 'Do you have swelling in your joints?',
+                'type': 'yes_no',
+                'weight': 'high'
+            },
+            {
+                'id': 'warmth_redness',
+                'question': 'Are affected joints warm to touch or red?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'range_motion',
+                'question': 'Do you have decreased range of motion in affected joints?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'fatigue',
+                'question': 'Do you experience unusual fatigue or tiredness?',
+                'type': 'yes_no',
+                'weight': 'medium'
+            },
+            {
+                'id': 'pain_pattern',
+                'question': 'When is your pain typically worse?',
+                'type': 'choice',
+                'options': ['Morning', 'Evening', 'After activity', 'Constant throughout day', 'No specific pattern'],
+                'weight': 'medium'
+            },
+            {
+                'id': 'weather_impact',
+                'question': 'Does weather (cold, rain) affect your symptoms?',
+                'type': 'yes_no',
+                'weight': 'low'
+            },
+            {
+                'id': 'activity_limitation',
+                'question': 'Do symptoms limit your daily activities?',
+                'type': 'choice',
+                'options': ['Not at all', 'Slightly', 'Moderately', 'Severely'],
+                'weight': 'high'
+            },
+            {
+                'id': 'family_history',
+                'question': 'Do you have a family history of arthritis?',
+                'type': 'yes_no',
+                'weight': 'low'
+            },
+            {
+                'id': 'age',
+                'question': 'What is your age group?',
+                'type': 'choice',
+                'options': ['Under 30', '30-45', '45-60', 'Over 60'],
+                'weight': 'low'
+            }
+        ],
+        'conditional_questions': {
+            'joint_pain': {
+                'yes': [
+                    {
+                        'id': 'pain_intensity',
+                        'question': 'How would you rate your pain on a scale of 1-10?',
+                        'type': 'choice',
+                        'options': ['1-3 (Mild)', '4-6 (Moderate)', '7-9 (Severe)', '10 (Unbearable)'],
+                        'weight': 'high'
+                    }
+                ]
+            }
+        }
     }
 }
 
@@ -507,7 +1051,12 @@ class QuestionnaireSession:
             'stomach': ['stomach', 'belly', 'abdomen', 'tummy', 'digestive', 'gastric'],
             'headache': ['head', 'headache', 'migraine', 'temple'],
             'fever': ['fever', 'temperature', 'hot', 'feverish'],
-            'cough': ['cough', 'coughing', 'throat', 'respiratory']
+            'cough': ['cough', 'coughing', 'throat', 'respiratory'],
+            'cancer': ['cancer', 'tumor', 'tumour', 'malignancy', 'oncology', 'carcinoma', 'lump', 'mass'],
+            'diabetes': ['diabetes', 'diabetic', 'blood sugar', 'glucose', 'insulin', 'hyperglycemia'],
+            'hypertension': ['hypertension', 'high blood pressure', 'blood pressure', 'bp'],
+            'asthma': ['asthma', 'wheezing', 'breathing difficulty', 'difficulty breathing', 'breathlessness', 'shortness of breath'],
+            'arthritis': ['arthritis', 'joint pain', 'joint', 'rheumatoid', 'osteoarthritis']
         }
         
         for key, keywords in symptom_keywords.items():
@@ -661,6 +1210,82 @@ class QuestionnaireSession:
                 {'name': 'Dextromethorphan (Robitussin)', 'purpose': 'For dry cough'},
                 {'name': 'Guaifenesin (Mucinex)', 'purpose': 'For productive cough'},
                 {'name': 'Throat lozenges', 'purpose': 'For throat irritation'}
+            ]
+        elif 'cancer' in self.symptom.lower() or 'tumor' in self.symptom.lower():
+            recommendations = [
+                'Schedule an appointment with a healthcare provider immediately',
+                'Keep a detailed symptom diary',
+                'Prepare questions for your doctor visit',
+                'Bring a family member or friend to appointments',
+                'Request appropriate screening tests',
+                'Do not delay seeking medical attention'
+            ]
+            medications = [
+                {'name': 'Consult oncologist', 'purpose': 'Professional evaluation and treatment plan required'},
+                {'name': 'Screening tests', 'purpose': 'May include blood work, imaging, or biopsy as recommended'}
+            ]
+        elif 'diabetes' in self.symptom.lower() or 'blood sugar' in self.symptom.lower():
+            recommendations = [
+                'Monitor blood glucose levels regularly',
+                'Follow a balanced diet - limit simple carbohydrates',
+                'Exercise regularly (30 minutes daily)',
+                'Maintain a healthy weight',
+                'Stay hydrated',
+                'Get regular check-ups and A1C tests',
+                'Check feet daily for cuts or sores'
+            ]
+            medications = [
+                {'name': 'Metformin', 'purpose': 'First-line medication for Type 2 diabetes (prescription required)'},
+                {'name': 'Insulin', 'purpose': 'For Type 1 diabetes and some Type 2 cases (prescription required)'},
+                {'name': 'Blood glucose meter', 'purpose': 'For self-monitoring'}
+            ]
+        elif 'hypertension' in self.symptom.lower() or 'blood pressure' in self.symptom.lower():
+            recommendations = [
+                'Monitor blood pressure regularly at home',
+                'Reduce salt intake (less than 2,300 mg/day)',
+                'Maintain a healthy weight',
+                'Exercise regularly (150 minutes/week)',
+                'Limit alcohol consumption',
+                'Manage stress through relaxation techniques',
+                'Quit smoking if applicable',
+                'Follow DASH diet (Dietary Approaches to Stop Hypertension)'
+            ]
+            medications = [
+                {'name': 'ACE inhibitors or ARBs', 'purpose': 'First-line blood pressure medication (prescription required)'},
+                {'name': 'Diuretics', 'purpose': 'Help reduce fluid retention (prescription required)'},
+                {'name': 'Home blood pressure monitor', 'purpose': 'For regular monitoring'}
+            ]
+        elif 'asthma' in self.symptom.lower():
+            recommendations = [
+                'Keep track of triggers and avoid them',
+                'Use air purifiers to reduce allergens',
+                'Take medications as prescribed',
+                'Have an asthma action plan',
+                'Get regular check-ups',
+                'Get annual flu vaccination',
+                'Avoid smoke and air pollution',
+                'Use proper inhaler technique'
+            ]
+            medications = [
+                {'name': 'Albuterol (rescue inhaler)', 'purpose': 'For quick relief of symptoms (prescription required)'},
+                {'name': 'Inhaled corticosteroids', 'purpose': 'For long-term control (prescription required)'},
+                {'name': 'Peak flow meter', 'purpose': 'To monitor lung function'}
+            ]
+        elif 'arthritis' in self.symptom.lower() or 'joint' in self.symptom.lower():
+            recommendations = [
+                'Stay physically active with low-impact exercises',
+                'Maintain a healthy weight to reduce joint stress',
+                'Apply heat or cold therapy',
+                'Use assistive devices if needed',
+                'Practice gentle stretching',
+                'Get adequate rest',
+                'Consider physical therapy',
+                'Protect joints during activities'
+            ]
+            medications = [
+                {'name': 'Acetaminophen (Tylenol)', 'purpose': 'For mild to moderate pain'},
+                {'name': 'NSAIDs (Ibuprofen, Naproxen)', 'purpose': 'For pain and inflammation'},
+                {'name': 'Topical pain relievers', 'purpose': 'For localized joint pain'}
             ]
         
         return {
