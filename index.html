@@ -47,7 +47,7 @@
         }
         /* Dark mode styles */
         .dark-mode .bg-gray-50 {
-            background-color: #2d3748 !important;
+            background-color: #1a202c !important;
         }
         .dark-mode .bg-white {
             background-color: #2d3748 !important;
@@ -80,6 +80,9 @@
         .dark-mode .shadow-2xl {
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
         }
+        .dark-mode .theme-toggle {
+            background-color: #4a5568 !important;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen p-4">
@@ -105,7 +108,7 @@
             </button>
         </div>
         <div class="flex gap-2">
-            <button id="theme-toggle-btn" class="w-12 h-12 rounded-xl bg-white shadow-md flex items-center justify-center hover:shadow-lg transition">
+            <button id="theme-toggle-btn" class="w-12 h-12 rounded-xl bg-white shadow-md flex items-center justify-center hover:shadow-lg transition theme-toggle">
                 <svg id="theme-icon-sun" class="w-6 h-6 text-yellow-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
                 </svg>
@@ -830,6 +833,10 @@
             document.body.classList.add('dark-mode');
             themeIconSun.classList.remove('hidden');
             themeIconMoon.classList.add('hidden');
+        } else {
+            document.body.classList.remove('dark-mode');
+            themeIconSun.classList.add('hidden');
+            themeIconMoon.classList.remove('hidden');
         }
     };
 
