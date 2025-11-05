@@ -1055,7 +1055,7 @@ class QuestionnaireSession:
             'cancer': ['cancer', 'tumor', 'tumour', 'malignancy', 'oncology', 'carcinoma', 'lump', 'mass'],
             'diabetes': ['diabetes', 'diabetic', 'blood sugar', 'glucose', 'insulin', 'hyperglycemia'],
             'hypertension': ['hypertension', 'high blood pressure', 'blood pressure', 'bp'],
-            'asthma': ['asthma', 'wheezing', 'breathing difficulty', 'breathlessness'],
+            'asthma': ['asthma', 'wheezing', 'breathing difficulty', 'difficulty breathing', 'breathlessness', 'shortness of breath'],
             'arthritis': ['arthritis', 'joint pain', 'joint', 'rheumatoid', 'osteoarthritis']
         }
         
