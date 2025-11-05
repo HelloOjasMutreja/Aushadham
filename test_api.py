@@ -2,6 +2,9 @@
 """
 Test script for Aushadham API with authentication
 This script tests the API endpoints and works with both Supabase and SQLAlchemy backends.
+
+Note: This test uses the pre-configured test accounts. Run 'python seed_test_users.py' 
+to create the test accounts if they don't exist.
 """
 import requests
 import json
@@ -37,8 +40,8 @@ def test_login():
     """Test user login"""
     print("\n=== Testing User Login ===")
     response = requests.post(f"{BASE_URL}/login", json={
-        "username": "testuser2",
-        "password": "testpass123"
+        "username": "testuser1",
+        "password": "password123"
     })
     print(f"Status: {response.status_code}")
     data = response.json()

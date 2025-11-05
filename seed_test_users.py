@@ -1,5 +1,8 @@
 """
 Script to seed test user accounts for easier testing
+
+WARNING: This script creates test accounts with weak passwords for development/testing only.
+Do NOT use in production environments.
 """
 from app import app, db, User
 import logging

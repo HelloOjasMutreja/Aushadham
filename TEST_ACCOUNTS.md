@@ -2,6 +2,8 @@
 
 This document lists the pre-configured test user accounts available for testing the Aushadham platform.
 
+⚠️ **WARNING**: These are test accounts for development/testing only. Do NOT use these accounts or passwords in production environments!
+
 ## Available Test Accounts
 
 ### Test User 1
