@@ -45,7 +45,8 @@
         .card-hover:hover {
             transform: translateY(-2px);
         }
-        /* Dark mode styles */
+        /* Dark mode color overrides - uses class-based theming with localStorage persistence
+           Note: !important is required to override TailwindCSS utility classes */
         .dark-mode .bg-gray-50 {
             background-color: #1a202c !important;
         }
@@ -72,7 +73,7 @@
         }
         .dark-mode input,
         .dark-mode textarea {
-            background-color: #374151 !important;
+            background-color: #4a5568 !important;
             color: #e2e8f0 !important;
         }
         .dark-mode .shadow-md,
