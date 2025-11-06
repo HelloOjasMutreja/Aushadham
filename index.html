@@ -264,6 +264,12 @@
                     </button>
                 </div>
                 
+                <!-- Modal Error Banner -->
+                <div id="modal-error-banner" class="hidden bg-red-50 border-2 border-red-400 text-red-800 px-4 py-3 rounded-xl mb-4" role="alert">
+                    <strong class="font-bold">Error: </strong>
+                    <span class="block sm:inline" id="modal-error-message">Something went wrong.</span>
+                </div>
+                
                 <div id="login-form">
                     <div class="mb-4">
                         <label class="block text-sm font-semibold mb-2 text-gray-700">Username or Email</label>
@@ -367,6 +373,8 @@
     
     const errorBanner = document.getElementById('error-banner');
     const errorMessage = document.getElementById('error-message');
+    const modalErrorBanner = document.getElementById('modal-error-banner');
+    const modalErrorMessage = document.getElementById('modal-error-message');
 
     // --- State ---
     let sessionId = null;
@@ -415,6 +423,14 @@
         }, 5000);
     };
 
+    const showModalError = (message) => {
+        modalErrorMessage.textContent = message || 'An unexpected error occurred.';
+        modalErrorBanner.classList.remove('hidden');
+        setTimeout(() => {
+            modalErrorBanner.classList.add('hidden');
+        }, 5000);
+    };
+
     const showSuccess = (message) => {
         const successBanner = document.createElement('div');
         successBanner.className = 'fixed top-4 right-4 bg-green-50 border-2 border-green-400 text-green-800 px-6 py-4 rounded-xl shadow-lg z-50';
@@ -426,7 +442,7 @@
     };
 
     // --- API Call Wrapper ---
-    const apiCall = async (endpoint, body, method = 'POST', requiresAuth = false) => {
+    const apiCall = async (endpoint, body, method = 'POST', requiresAuth = false, useModalError = false) => {
         try {
             const headers = { 'Content-Type': 'application/json' };
             if (requiresAuth && authToken) {
@@ -450,7 +466,11 @@
             return data;
         } catch (error) {
             console.error(`API Error on ${endpoint}:`, error);
-            showError(error.message);
+            if (useModalError) {
+                showModalError(error.message);
+            } else {
+                showError(error.message);
+            }
             return null;
         }
     };
@@ -483,6 +503,8 @@
 
     const openAuthModal = (isRegister = false) => {
         authModal.classList.remove('hidden');
+        // Clear any previous error messages
+        modalErrorBanner.classList.add('hidden');
         if (isRegister) {
             authModalTitle.textContent = 'Register';
             loginForm.classList.add('hidden');
@@ -510,14 +532,14 @@
         const password = document.getElementById('login-password').value;
         
         if (!username || !password) {
-            showError('Please enter username and password');
+            showModalError('Please enter username and password');
             return;
         }
         
         loginSubmitBtn.disabled = true;
         loginSubmitBtn.textContent = 'Logging in...';
         
-        const data = await apiCall('login', { username, password });
+        const data = await apiCall('login', { username, password }, 'POST', false, true);
         
         loginSubmitBtn.disabled = false;
         loginSubmitBtn.textContent = 'Login';
@@ -540,14 +562,14 @@
         const full_name = document.getElementById('register-fullname').value.trim();
         
         if (!username || !email || !password) {
-            showError('Please fill in all required fields');
+            showModalError('Please fill in all required fields');
             return;
         }
         
         registerSubmitBtn.disabled = true;
         registerSubmitBtn.textContent = 'Registering...';
         
-        const data = await apiCall('register', { username, email, password, full_name });
+        const data = await apiCall('register', { username, email, password, full_name }, 'POST', false, true);
         
         registerSubmitBtn.disabled = false;
         registerSubmitBtn.textContent = 'Register';

@@ -51,6 +51,60 @@ if USE_SUPABASE:
 else:
     logger.info("Using SQLAlchemy for database operations")
 
+# Hardcoded Users (instead of database)
+# Password hashes are for 'password123' for all users
+HARDCODED_USERS = {
+    'user1': {
+        'id': 1,
+        'username': 'user1',
+        'email': 'user1@aushadham.com',
+        'password_hash': bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+        'full_name': 'Test User One',
+        'phone': '+1234567890',
+        'created_at': '2024-01-01T00:00:00'
+    },
+    'user2': {
+        'id': 2,
+        'username': 'user2',
+        'email': 'user2@aushadham.com',
+        'password_hash': bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+        'full_name': 'Test User Two',
+        'phone': '+1234567891',
+        'created_at': '2024-01-01T00:00:00'
+    },
+    'user3': {
+        'id': 3,
+        'username': 'user3',
+        'email': 'user3@aushadham.com',
+        'password_hash': bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+        'full_name': 'Test User Three',
+        'phone': '+1234567892',
+        'created_at': '2024-01-01T00:00:00'
+    }
+}
+
+def get_hardcoded_user_by_username(username):
+    """Get hardcoded user by username"""
+    return HARDCODED_USERS.get(username)
+
+def get_hardcoded_user_by_email(email):
+    """Get hardcoded user by email"""
+    for user in HARDCODED_USERS.values():
+        if user['email'] == email:
+            return user
+    return None
+
+def get_hardcoded_user_by_id(user_id):
+    """Get hardcoded user by ID"""
+    for user in HARDCODED_USERS.values():
+        if user['id'] == user_id:
+            return user
+    return None
+
+def check_hardcoded_password(user, password):
+    """Check if password matches the hardcoded user's hash"""
+    return bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8'))
+
 # Database Models
 class User(db.Model):
     __tablename__ = 'users'
@@ -1317,88 +1371,16 @@ sessions: Dict[str, QuestionnaireSession] = {}
 # Authentication Routes
 @app.route("/register", methods=["POST"])
 def register():
-    """Register a new user"""
-    try:
-        data = request.json
-        username = data.get('username')
-        email = data.get('email')
-        password = data.get('password')
-        full_name = data.get('full_name', '')
-        phone = data.get('phone', '')
-        
-        # Validate required fields
-        if not username or not email or not password:
-            return jsonify({'success': False, 'error': 'Username, email, and password are required'}), 400
-        
-        if USE_SUPABASE:
-            # Using Supabase
-            # Check if user already exists
-            if supabase_service.get_user_by_username(username):
-                return jsonify({'success': False, 'error': 'Username already exists'}), 409
-            
-            if supabase_service.get_user_by_email(email):
-                return jsonify({'success': False, 'error': 'Email already exists'}), 409
-            
-            # Create new user
-            user = supabase_service.create_user(username, email, password, full_name, phone)
-            if not user:
-                return jsonify({'success': False, 'error': 'Registration failed. Please try again.'}), 400
-            
-            # Create access token
-            access_token = create_access_token(identity=user['id'])
-            
-            return jsonify({
-                'success': True,
-                'message': 'User registered successfully',
-                'user': {
-                    'id': user['id'],
-                    'username': user['username'],
-                    'email': user['email'],
-                    'full_name': user.get('full_name', ''),
-                    'phone': user.get('phone', ''),
-                    'created_at': user.get('created_at')
-                },
-                'access_token': access_token
-            }), 201
-        else:
-            # Using SQLAlchemy
-            # Check if user already exists
-            if User.query.filter_by(username=username).first():
-                return jsonify({'success': False, 'error': 'Username already exists'}), 409
-            
-            if User.query.filter_by(email=email).first():
-                return jsonify({'success': False, 'error': 'Email already exists'}), 409
-            
-            # Create new user
-            user = User(
-                username=username,
-                email=email,
-                full_name=full_name,
-                phone=phone
-            )
-            user.set_password(password)
-            
-            db.session.add(user)
-            db.session.commit()
-            
-            # Create access token
-            access_token = create_access_token(identity=user.id)
-            
-            return jsonify({
-                'success': True,
-                'message': 'User registered successfully',
-                'user': user.to_dict(),
-                'access_token': access_token
-            }), 201
-    except Exception as e:
-        if not USE_SUPABASE:
-            db.session.rollback()
-        logger.error(f"Registration error: {str(e)}")
-        return jsonify({'success': False, 'error': 'Registration failed. Please try again.'}), 400
+    """Register a new user (disabled - only hardcoded users allowed)"""
+    # Registration is disabled - only hardcoded users can login
+    return jsonify({
+        'success': False, 
+        'error': 'Registration is currently disabled. Please use one of the predefined test accounts: user1, user2, or user3 (password: password123)'
+    }), 403
 
 @app.route("/login", methods=["POST"])
 def login():
-    """Login a user"""
+    """Login a user (using hardcoded users)"""
     try:
         data = request.json
         username = data.get('username')
@@ -1407,51 +1389,30 @@ def login():
         if not username or not password:
             return jsonify({'success': False, 'error': 'Username and password are required'}), 400
         
-        if USE_SUPABASE:
-            # Using Supabase
-            # Find user by username or email
-            user = supabase_service.get_user_by_username(username)
-            if not user:
-                user = supabase_service.get_user_by_email(username)
-            
-            if not user or not supabase_service.verify_password(password, user['password_hash']):
-                return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
-            
-            # Create access token
-            access_token = create_access_token(identity=user['id'])
-            
-            return jsonify({
-                'success': True,
-                'message': 'Login successful',
-                'user': {
-                    'id': user['id'],
-                    'username': user['username'],
-                    'email': user['email'],
-                    'full_name': user.get('full_name', ''),
-                    'phone': user.get('phone', ''),
-                    'created_at': user.get('created_at')
-                },
-                'access_token': access_token
-            })
-        else:
-            # Using SQLAlchemy
-            # Find user by username or email
-            user = User.query.filter(
-                (User.username == username) | (User.email == username)
-            ).first()
-            
-            if not user or not user.check_password(password):
-                return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
-            
-            # Create access token
-            access_token = create_access_token(identity=user.id)
-            
-            return jsonify({
-                'success': True,
-                'message': 'Login successful',
-                'user': user.to_dict(),
-                'access_token': access_token
-            })
+        # Find hardcoded user by username or email
+        user = get_hardcoded_user_by_username(username)
+        if not user:
+            user = get_hardcoded_user_by_email(username)
+        
+        if not user or not check_hardcoded_password(user, password):
+            return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
+        
+        # Create access token
+        access_token = create_access_token(identity=user['id'])
+        
+        return jsonify({
+            'success': True,
+            'message': 'Login successful',
+            'user': {
+                'id': user['id'],
+                'username': user['username'],
+                'email': user['email'],
+                'full_name': user.get('full_name', ''),
+                'phone': user.get('phone', ''),
+                'created_at': user.get('created_at')
+            },
+            'access_token': access_token
+        })
     except Exception as e:
         logger.error(f"Login error: {str(e)}")
         return jsonify({'success': False, 'error': 'Login failed. Please try again.'}), 400
@@ -1459,36 +1420,26 @@ def login():
 @app.route("/profile", methods=["GET"])
 @jwt_required()
 def get_profile():
-    """Get current user profile"""
+    """Get current user profile (using hardcoded users)"""
     try:
         user_id = get_jwt_identity()
         
-        if USE_SUPABASE:
-            user = supabase_service.get_user_by_id(user_id)
-            if not user:
-                return jsonify({'success': False, 'error': 'User not found'}), 404
-            
-            return jsonify({
-                'success': True,
-                'user': {
-                    'id': user['id'],
-                    'username': user['username'],
-                    'email': user['email'],
-                    'full_name': user.get('full_name', ''),
-                    'phone': user.get('phone', ''),
-                    'created_at': user.get('created_at')
-                }
-            })
-        else:
-            user = User.query.get(user_id)
-            
-            if not user:
-                return jsonify({'success': False, 'error': 'User not found'}), 404
-            
-            return jsonify({
-                'success': True,
-                'user': user.to_dict()
-            })
+        # Get hardcoded user by ID
+        user = get_hardcoded_user_by_id(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': user['id'],
+                'username': user['username'],
+                'email': user['email'],
+                'full_name': user.get('full_name', ''),
+                'phone': user.get('phone', ''),
+                'created_at': user.get('created_at')
+            }
+        })
     except Exception as e:
         logger.error(f"Get profile error: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to retrieve profile.'}), 400
@@ -1496,70 +1447,20 @@ def get_profile():
 @app.route("/profile", methods=["PUT"])
 @jwt_required()
 def update_profile():
-    """Update user profile"""
+    """Update user profile (disabled for hardcoded users)"""
     try:
         user_id = get_jwt_identity()
-        data = request.json
         
-        if USE_SUPABASE:
-            user = supabase_service.get_user_by_id(user_id)
-            if not user:
-                return jsonify({'success': False, 'error': 'User not found'}), 404
-            
-            updates = {}
-            if 'full_name' in data:
-                updates['full_name'] = data['full_name']
-            if 'phone' in data:
-                updates['phone'] = data['phone']
-            if 'email' in data:
-                # Check if email is already taken by another user
-                existing = supabase_service.get_user_by_email(data['email'])
-                if existing and existing['id'] != user_id:
-                    return jsonify({'success': False, 'error': 'Email already in use'}), 409
-                updates['email'] = data['email']
-            
-            updated_user = supabase_service.update_user(user_id, updates)
-            
-            return jsonify({
-                'success': True,
-                'message': 'Profile updated successfully',
-                'user': {
-                    'id': updated_user['id'],
-                    'username': updated_user['username'],
-                    'email': updated_user['email'],
-                    'full_name': updated_user.get('full_name', ''),
-                    'phone': updated_user.get('phone', ''),
-                    'created_at': updated_user.get('created_at')
-                }
-            })
-        else:
-            user = User.query.get(user_id)
-            
-            if not user:
-                return jsonify({'success': False, 'error': 'User not found'}), 404
-            
-            # Update allowed fields
-            if 'full_name' in data:
-                user.full_name = data['full_name']
-            if 'phone' in data:
-                user.phone = data['phone']
-            if 'email' in data:
-                # Check if email is already taken by another user
-                existing = User.query.filter(User.email == data['email'], User.id != user_id).first()
-                if existing:
-                    return jsonify({'success': False, 'error': 'Email already in use'}), 409
-                user.email = data['email']
-            
-            db.session.commit()
-            
-            return jsonify({
-                'success': True,
-                'message': 'Profile updated successfully',
-                'user': user.to_dict()
-            })
+        # Profile updates are disabled for hardcoded users
+        user = get_hardcoded_user_by_id(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        return jsonify({
+            'success': False,
+            'error': 'Profile updates are disabled for test accounts'
+        }), 403
     except Exception as e:
-        if not USE_SUPABASE:
-            db.session.rollback()
         logger.error(f"Profile update error: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to update profile.'}), 400
 
